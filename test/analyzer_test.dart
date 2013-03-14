@@ -957,6 +957,26 @@ main() {
       compInfo = fileInfo['bar.html'].declaredComponents[0];
       _compareSummary(info.query('x-bar').component, compInfo);
     });
+
+    test('parse stylesheets', () {
+      var files = parseFiles({
+        'a/b.html': '<head>'
+                    '<link rel="stylesheet" href="c.css">'
+                    '<link rel="stylesheet" href="d/e.css">'
+                    '<link rel="stylesheet" href="/f.css">'
+                    '<link rel="stylesheet" href="http://q.css">'
+                    '<link rel="stylesheet" href="https://q.css">'
+                    '<link rel="stylesheet" href="file:///r.css">'
+                    '<link rel="stylesheet" href="package:p.css">'
+                    '<link rel="stylesheet" href="//google.com/g.css">'
+                    '</head><body>',
+      });
+
+      var fileInfo = analyzeFiles(files);
+      var info = fileInfo['a/b.html'];
+      expect(info.styleSheetHref,
+          ['a/c.css', 'a/d/e.css', '/f.css', 'packages/p.css']);
+    });
   });
 }
 

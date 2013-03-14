@@ -743,8 +743,8 @@ class _ElementLoader extends TreeVisitor {
    * <https://dvcs.w3.org/hg/webcomponents/raw-file/tip/spec/components/index.html#link-type-component>
    */
   void visitLinkElement(Element node) {
-    // TODO(jmesserly): deprecate the plural form, it is singular in the spec.
     var rel = node.attributes['rel'];
+    // TODO(jmesserly): deprecate the plural form, it is singular in the spec.
     if (rel != 'component' && rel != 'components' &&
         rel != 'stylesheet') return;
 
@@ -761,23 +761,26 @@ class _ElementLoader extends TreeVisitor {
       return;
     }
 
+    if (rel == 'stylesheet') {
+      var uri = Uri.parse(href);
+      if (!uri.domain.isEmpty) return;
+      if (!uri.scheme.isEmpty && uri.scheme != 'package') return;
+    }
+
     var hrefTarget;
     if (href.startsWith('package:')) {
       hrefTarget = path.join(_packageRoot, href.substring(8));
+    } else if (path.isAbsolute(href)) {
+      hrefTarget = href;
     } else {
-      hrefTarget = path.normalize(
-          path.join(path.dirname(_fileInfo.inputPath), href));
+      hrefTarget = path.join(path.dirname(_fileInfo.inputPath), href);
     }
+    hrefTarget = path.normalize(hrefTarget);
 
-    if (rel == 'component' || rel == 'components') {
-      _fileInfo.componentLinks.add(hrefTarget);
+    if (rel == 'stylesheet') {
+      _fileInfo.styleSheetHref.add(hrefTarget);
     } else {
-      assert(rel == 'stylesheet');
-      // Local stylesheets only are handled.
-      var scheme = Uri.parse(href).scheme;
-      if (scheme != 'http' && scheme != 'https') {
-        _fileInfo.styleSheetHref.add(hrefTarget);
-      }
+      _fileInfo.componentLinks.add(hrefTarget);
     }
   }
 
