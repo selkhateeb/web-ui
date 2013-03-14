@@ -567,7 +567,7 @@ abstract class PlaceholderTemplate extends Template {
 typedef void ConditionalBodySetup(ConditionalTemplate template);
 
 /**
- * A template conditionals like `<template instantiate="if test">` or
+ * A template conditional like `<template instantiate="if test">` or
  * `<td template instantiate="if test">`.
  */
 class ConditionalTemplate extends PlaceholderTemplate {
