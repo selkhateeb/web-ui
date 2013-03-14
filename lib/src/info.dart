@@ -368,12 +368,13 @@ class ComponentInfo extends LibraryInfo implements ComponentSummary {
         var oldCtor = toCamelCase(tagName.substring(2), startUppercase: true);
         _classDeclaration = userCode.findClass(oldCtor);
         if (_classDeclaration != null) {
-          messages.error('Implied constructor name for x-tags has changed to '
-              '"$className". Rename your class or add a '
+          messages.warning('Implied constructor name for x-tags has changed to '
+              '"$className". You should rename your class or add a '
               'constructor="$oldCtor" attribute to the element declaration. '
               'Also custom tags are not required to start with "x-" if their '
               'name has at least one dash.',
               element.sourceSpan, file: dartCodePath);
+          className = oldCtor;
         }
       }
 
