@@ -364,7 +364,7 @@ class ComponentInfo extends LibraryInfo implements ComponentSummary {
     _classDeclaration = userCode.findClass(className);
     if (_classDeclaration == null) {
       // Check for deprecated x-tags implied constructor.
-      if (tagName.startsWith('x-') && className == null) {
+      if (tagName.startsWith('x-') && constructor == null) {
         var oldCtor = toCamelCase(tagName.substring(2), startUppercase: true);
         _classDeclaration = userCode.findClass(oldCtor);
         if (_classDeclaration != null) {

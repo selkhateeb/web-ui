@@ -657,7 +657,21 @@ main() {
       var doc = parse('<body><element constructor="Baz"></element>');
       var info = analyzeDefinitionsInTree(doc);
       expect(info.declaredComponents.length, equals(0));
-      // TODO(jmesserly): validate warnings
+      expect(messages.errors.length, 1);
+      expect(messages[0].message, contains('Missing tag name'));
+    });
+
+    test('deprecated constructor name', () {
+      var doc = parse('<body><element name="x-my-tag">'
+        '<template></template>'
+        '<script type="application/dart">'
+        'class MyTag {}'
+        '</script></element>', generateSpans: true, sourceUrl: '<MEMORY>');
+      var info = analyzeDefinitionsInTree(doc);
+      expect(info.declaredComponents.length, equals(1));
+      info.declaredComponents.single.findClassDeclaration(messages);
+      expect(messages.warnings.length, 1);
+      expect(messages[0].message, contains('You should rename your class'));
     });
 
     test('duplicate tag name - is error', () {
