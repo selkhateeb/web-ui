@@ -184,11 +184,10 @@ class UriVisitor extends Visitor {
    */
   final String _pathToOriginalCss;
 
-  factory UriVisitor(
-      PathInfo pathInfo, String mainPath, String cssPath, bool rewriteUrl) {
+  factory UriVisitor(PathInfo pathInfo, String cssPath, bool rewriteUrl) {
     var cssDir = path.dirname(cssPath);
-    var outCssDir = rewriteUrl ? pathInfo.outputDirPath(mainPath)
-        : path.dirname(mainPath);
+    var outCssDir = rewriteUrl ? pathInfo.outputDirPath(cssPath)
+        : path.dirname(cssPath);
     return new UriVisitor._internal(path.relative(cssDir, from: outCssDir));
   }
 

@@ -280,9 +280,7 @@ class Compiler {
     var fileInfo = new FileInfo(cssFile.path);
     info[cssFile.path] = fileInfo;
 
-    var uriVisitor = new UriVisitor(_pathInfo, _mainPath, fileInfo.inputPath,
-        options.rewriteUrls);
-    var styleSheet = _parseCss(cssFile.path, cssFile.code, uriVisitor, options);
+    var styleSheet = _parseCss(cssFile.code, cssFile.path, _messages, options);
     if (styleSheet != null) {
       fileInfo.styleSheets.add(styleSheet);
     }
@@ -485,10 +483,7 @@ class Compiler {
         var fileInfo = info[file.path];
         cleanHtmlNodes(fileInfo);
         if (!fileInfo.isEntryPoint) {
-          // Check all components files for <style> tags and parse the CSS.
-          var uriVisitor = new UriVisitor(_pathInfo, _mainPath,
-              fileInfo.inputPath, options.rewriteUrls);
-          _processStylesheet(uriVisitor, fileInfo, options: options);
+          _processStylesheet(fileInfo, messages: _messages, options: options);
         }
         fixupHtmlCss(fileInfo, options);
         _emitComponents(fileInfo);
@@ -566,29 +561,55 @@ class Compiler {
 
     // Emit all linked style sheet files first.
     for (var file in files) {
+      var css = new StringBuffer();
       var fileInfo = info[file.path];
       if (file.isStyleSheet) {
         for (var styleSheet in fileInfo.styleSheets) {
-          buff.write(
-              '/* ==================================================== */\n'
-              '/* Linked style sheet href = ${path.basename(file.path)} */\n'
-              '/* ==================================================== */\n');
-          buff.write(emitStyleSheet(styleSheet));
-          buff.write('\n\n');
+          // Translate any URIs in CSS.
+          var uriVisitor = new UriVisitor(_pathInfo, fileInfo.inputPath,
+              options.rewriteUrls);
+          uriVisitor.visitTree(styleSheet);
+
+          if (options.debugCss) {
+            print('\nCSS source: ${fileInfo.inputPath.toString()}');
+            print('==========\n');
+            print(treeToDebugString(styleSheet));
+          }
+
+          css.write(
+              '/* Auto-generated from style sheet href = ${file.path} */\n'
+              '/* DO NOT EDIT. */\n\n');
+          css.write(emitStyleSheet(styleSheet));
+          css.write('\n\n');
         }
+
+        // Emit the linked style sheet in the output directory.
+        var outCss = _pathInfo.outputPath(fileInfo.inputPath, '');
+        output.add(new OutputFile(outCss, css.toString()));
       }
     }
 
-    // Emit all CSS in each component (style scoped).
+    // Emit all CSS for each component (style scoped).
     for (var file in files) {
       if (file.isHtml) {
         var fileInfo = info[file.path];
         for (var component in fileInfo.declaredComponents) {
           for (var styleSheet in component.styleSheets) {
+
+            // Translate any URIs in CSS.
+            var uriVisitor = new UriVisitor(_pathInfo, fileInfo.inputPath,
+                options.rewriteUrls);
+            uriVisitor.visitTree(styleSheet);
+
+            if (buff.isEmpty) {
+              buff.write(
+                  '/* Auto-generated from components style tags. */\n'
+                  '/* DO NOT EDIT. */\n\n');
+            }
             buff.write(
-                '/* ==================================================== */\n'
-                '/* Component ${component.tagName} stylesheet */\n'
-                '/* ==================================================== */\n');
+                '/* ==================================================== \n'
+                '   Component ${component.tagName} stylesheet \n'
+                '   ==================================================== */\n');
             buff.write(emitStyleSheet(styleSheet, component.tagName));
             buff.write('\n\n');
           }
@@ -684,33 +705,38 @@ class Compiler {
 }
 
 /** Parse all stylesheet for polyfilling assciated with [info]. */
-void _processStylesheet(uriVisitor, info, {CompilerOptions options : null}) {
-  new _ProcessCss(uriVisitor, options).visit(info);
+void _processStylesheet(info, {Messages messages : null,
+                               CompilerOptions options : null}) {
+  new _ProcessCss(messages, options).visit(info);
 }
 
-StyleSheet _parseCss(String src, String content, UriVisitor uriVisitor,
-                     CompilerOptions options) {
+// TODO(terry): Add --checked when fully implemented and error handling.
+StyleSheet _parseCss(String content, String sourcePath, Messages messages,
+                     CompilerOptions opts) {
   if (!content.trim().isEmpty) {
+    var errs = [];
+
     // TODO(terry): Add --checked when fully implemented and error handling.
-    var styleSheet = css.parse(content, options:
-      [options.warningsAsErrors ? '--warnings_as_errors' : '', 'memory']);
-    uriVisitor.visitTree(styleSheet);
-    if (options.debugCss) {
-      print('\nCSS source: $src');
-      print('==========\n');
-      print(treeToDebugString(styleSheet));
+    var stylesheet = css.parse(content, errors: errs, options:
+        [opts.warningsAsErrors ? '--warnings_as_errors' : '', 'memory']);
+
+    // Note: errors aren't fatal in HTML (unless strict mode is on).
+    // So just print them as warnings.
+    for (var e in errs) {
+      messages.warning(e.message, e.span, file: sourcePath);
     }
-    return styleSheet;
+
+    return stylesheet;
   }
 }
 
 /** Post-analysis of style sheet; parsed ready for emitting with polyfill. */
 class _ProcessCss extends InfoVisitor {
-  final UriVisitor uriVisitor;
+  final Messages messages;
   final CompilerOptions options;
   ComponentInfo component;
 
-  _ProcessCss(this.uriVisitor, this.options);
+  _ProcessCss(this.messages, this.options);
 
   void visitComponentInfo(ComponentInfo info) {
     var oldComponent = component;
@@ -725,10 +751,9 @@ class _ProcessCss extends InfoVisitor {
     if (component != null) {
       var node = info.node;
       if (node.tagName == 'style' && node.attributes.containsKey("scoped")) {
-        // Get contents of style tag.
-        var content = node.nodes.single.value;
-        var styleSheet = _parseCss(component.tagName, content, uriVisitor,
-            options);
+        // Parse the contents of the scoped style tag.
+        var styleSheet = _parseCss(node.nodes.single.value,
+            component.declaringFile.inputPath, messages, options);
         if (styleSheet != null) {
           component.styleSheets.add(styleSheet);
         }

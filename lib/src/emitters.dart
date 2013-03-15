@@ -545,10 +545,8 @@ class MainPageEmitter extends RecursiveEmitter {
       var rel = tag.attributes['rel'];
       if (rel == 'component' || rel == 'components') {
        tag.remove();
-      } else if (_cssPolyfill &&
-          rel == 'stylesheet' && !href.startsWith('http')) {
-        tag.remove();
-      } else if (href != null && rewriteUrls) {
+      } else if (href != null && (rel != 'stylesheet' || !_cssPolyfill) &&
+          rewriteUrls) {
        tag.attributes['href'] = pathInfo.transformUrl(filePath, href);
       }
     });
