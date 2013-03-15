@@ -89,8 +89,9 @@ class PathInfo {
    * The path to the output file corresponding to [input], by adding
    * [_DEFAULT_PREFIX] and a [suffix] to its file name.
    */
-  String outputPath(String input, String suffix) =>
-      path.join(outputDirPath(input), mangle(path.basename(input), suffix));
+  String outputPath(String input, String suffix, [bool forceSuffix = false]) =>
+      path.join(outputDirPath(input),
+          mangle(path.basename(input), suffix, forceSuffix));
 
   /** The path to the output file corresponding to [info]. */
   String outputLibraryPath(LibrarySummary lib) =>

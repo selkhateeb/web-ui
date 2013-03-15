@@ -315,86 +315,96 @@ main() {
   });
 
   group('emit main page class', () {
+    var messages;
+    setUp(() {
+      messages = new Messages.silent();
+    });
 
     test('external resource URLs', () {
       var html =
           '<html><head>'
           '<script src="http://ex.com/a.js" type="text/javascript"></script>'
+          '<script src="foobar:a.js" type="text/javascript"></script>'
           '<script src="//example.com/a.js" type="text/javascript"></script>'
           '<script src="/a.js" type="text/javascript"></script>'
           '<link href="http://example.com/a.css" rel="stylesheet">'
+          '<link href="foobar:a.css" rel="stylesheet">'
           '<link href="//example.com/a.css" rel="stylesheet">'
           '<link href="/a.css" rel="stylesheet">'
           '</head><body></body></html>';
       var doc = parseDocument(html);
-      var fileInfo = analyzeNodeForTesting(doc, new Messages.silent());
+      var fileInfo = analyzeNodeForTesting(doc, messages);
       fileInfo.inlinedCode = new DartCodeInfo('main', null, [], '', null);
       var pathInfo = _newPathInfo('a', 'b', true);
 
-      var emitter = new MainPageEmitter(fileInfo, false);
-      emitter.run(doc, pathInfo, null, true);
-      expect(doc.outerHtml, equals(html));
+      transformMainHtml(doc, fileInfo, pathInfo, false, true, messages);
+      expect(doc.outerHtml,
+          '\n<!-- This file was auto-generated from ${fileInfo.inputPath}. -->'
+          '\n<html><head>'
+          '<style>template { display: none; }</style>'
+          '<script src="http://ex.com/a.js" type="text/javascript"></script>'
+          '<script src="foobar:a.js" type="text/javascript"></script>'
+          '<script src="//example.com/a.js" type="text/javascript"></script>'
+          '<script src="/a.js" type="text/javascript"></script>'
+          '<link href="http://example.com/a.css" rel="stylesheet">'
+          '<link href="foobar:a.css" rel="stylesheet">'
+          '<link href="//example.com/a.css" rel="stylesheet">'
+          '<link href="/a.css" rel="stylesheet">'
+          '</head><body>'
+          '<script type="text/javascript" src="packages/browser/dart.js">'
+          '</script>\n</body></html>');
     });
 
-    group('transform css urls', () {
-
+    test('transform css urls', () {
       var html = '<html><head>'
-          '<link href="a.css" rel="stylesheet">'
+          '<link rel="stylesheet" href="a.css">'
           '</head><body></body></html>';
 
-      test('html at the top level', () {
-        var doc = parseDocument(html);
-        var fileInfo = analyzeNodeForTesting(doc, new Messages.silent(),
-            filepath: 'a.html');
-        fileInfo.inlinedCode = new DartCodeInfo('main', null, [], '', null);
-        // Issue #207 happened because we used to mistakenly take the path of
-        // the external file when transforming the urls in the html file.
-        fileInfo.externalFile = 'dir/a.dart';
-        var pathInfo = _newPathInfo('', 'out', true);
-        var emitter = new MainPageEmitter(fileInfo, false);
-        emitter.run(doc, pathInfo, null, true);
-        expect(doc.outerHtml, html.replaceAll('a.css', '../a.css'));
-      });
+      var doc = parseDocument(html);
+      var fileInfo = analyzeNodeForTesting(doc, messages, filepath: 'a.html');
+      fileInfo.inlinedCode = new DartCodeInfo('main', null, [], '', null);
+      // Issue #207 happened because we used to mistakenly take the path of
+      // the external file when transforming the urls in the html file.
+      fileInfo.externalFile = 'dir/a.dart';
+      var pathInfo = _newPathInfo('', 'out', true);
+      transformMainHtml(doc, fileInfo, pathInfo, false, true, messages);
+      var emitter = new EntryPointEmitter(fileInfo);
+      emitter.run(pathInfo, null, true);
 
-      test('file within dir -- base dir match input file dir', () {
-        var doc = parseDocument(html);
-        var fileInfo = analyzeNodeForTesting(doc, new Messages.silent(),
-            filepath: 'dir/a.html');
-        fileInfo.inlinedCode = new DartCodeInfo('main', null, [], '', null);
-        // Issue #207 happened because we used to mistakenly take the path of
-        // the external file when transforming the urls in the html file.
-        fileInfo.externalFile = 'dir/a.dart';
-        var pathInfo = _newPathInfo('dir/', 'out', true);
-        var emitter = new MainPageEmitter(fileInfo, false);
-        emitter.run(doc, pathInfo, null, true);
-        expect(doc.outerHtml, html.replaceAll('a.css', '../dir/a.css'));
-      });
+      expect(doc.outerHtml,
+          '\n<!-- This file was auto-generated from ${fileInfo.inputPath}. -->'
+          '\n<html><head>'
+          '<style>template { display: none; }</style>'
+          '<link rel="stylesheet" href="../a.css">'
+          '</head><body>'
+          '<script type="text/javascript" src="packages/browser/dart.js">'
+          '</script>\n'
+          '</body></html>');
+    });
 
-      test('file within dir, base dir at top-level', () {
-        var doc = parseDocument(html);
-        var fileInfo = analyzeNodeForTesting(doc, new Messages.silent(),
-            filepath: 'dir/a.html');
-        fileInfo.inlinedCode = new DartCodeInfo('main', null, [], '', null);
-        // Issue #207 happened because we used to mistakenly take the path of
-        // the external file when transforming the urls in the html file.
-        fileInfo.externalFile = 'dir/a.dart';
-        var pathInfo = _newPathInfo('', 'out', true);
-        var emitter = new MainPageEmitter(fileInfo, false);
-        emitter.run(doc, pathInfo, null, true);
-        expect(doc.outerHtml, html.replaceAll('a.css', '../../dir/a.css'));
-      });
 
-      test('no changes when feature is disabled', () {
-        var doc = parseDocument(html);
-        var fileInfo = analyzeNodeForTesting(doc, new Messages.silent(),
-            filepath: 'a.html');
-        fileInfo.inlinedCode = new DartCodeInfo('main', null, [], '', null);
-        fileInfo.externalFile = 'dir/a.dart';
-        var pathInfo = _newPathInfo('', 'out', true);
-        var emitter = new MainPageEmitter(fileInfo, false);
-        emitter.run(doc, pathInfo, null, false);
-        expect(doc.outerHtml, html);
-      });
+    test('no css urls if no styles', () {
+      var html = '<html><head></head><body></body></html>';
+      var doc = parseDocument(html);
+      var fileInfo = analyzeNodeForTesting(doc, messages, filepath: 'a.html');
+      fileInfo.inlinedCode = new DartCodeInfo('main', null, [], '', null);
+      fileInfo.externalFile = 'dir/a.dart';
+      var pathInfo = _newPathInfo('', 'out', true);
+      // TODO(jmesserly): this test is not quite right because we're supplying
+      // the hasCss property. We should probably convert this to be a compiler
+      // test.
+      transformMainHtml(doc, fileInfo, pathInfo, false, true, messages);
+      var emitter = new EntryPointEmitter(fileInfo);
+      emitter.run(pathInfo, null, true);
+
+      expect(doc.outerHtml,
+          '\n<!-- This file was auto-generated from ${fileInfo.inputPath}. -->'
+          '\n<html><head>'
+          '<style>template { display: none; }</style>'
+          '</head><body>'
+          '<script type="text/javascript" src="packages/browser/dart.js">'
+          '</script>\n'
+          '</body></html>');
     });
   });
 }

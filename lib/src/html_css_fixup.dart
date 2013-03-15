@@ -30,7 +30,7 @@ void fixupHtmlCss(FileInfo fileInfo, CompilerOptions opts) {
   for (var component in fileInfo.declaredComponents) {
     // TODO(terry): Consider allowing more than one style sheet per component.
     // For components only 1 stylesheet allowed.
-    if (!component.styleSheets.isEmpty && component.styleSheets.length == 1) {
+    if (component.styleSheets.length == 1) {
       var styleSheet = component.styleSheets[0];
       // If polyfill is on prefix component name to all CSS classes and ids
       // referenced in the scoped style.

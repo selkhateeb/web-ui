@@ -5,10 +5,12 @@
 /** Collects several code emitters for the template tool. */
 library emitters;
 
+import 'dart:uri';
 import 'package:csslib/parser.dart' as css;
 import 'package:csslib/visitor.dart';
 import 'package:html5lib/dom.dart';
 import 'package:html5lib/dom_parsing.dart';
+import 'package:html5lib/parser.dart';
 import 'package:pathos/path.dart' as path;
 import 'package:source_maps/span.dart' show Span, FileLocation;
 
@@ -520,45 +522,16 @@ class WebComponentEmitter extends RecursiveEmitter {
 }
 
 /** Generates the class corresponding to the main html page. */
-class MainPageEmitter extends RecursiveEmitter {
-  final bool _cssPolyfill;
+class EntryPointEmitter extends RecursiveEmitter {
 
-  MainPageEmitter(FileInfo fileInfo, [bool cssPolyfill = false]) :
-      this._cssPolyfill = cssPolyfill, super(fileInfo, new Context(indent: 1));
+  EntryPointEmitter(FileInfo fileInfo)
+      : super(fileInfo, new Context(indent: 1));
 
-  CodePrinter run(Document document, PathInfo pathInfo,
-      TextEditTransaction transaction, bool rewriteUrls) {
+  CodePrinter run(PathInfo pathInfo, TextEditTransaction transaction,
+      bool rewriteUrls) {
+
     var filePath = _fileInfo.inputPath;
     visit(_fileInfo.bodyInfo);
-
-    // fix up the URLs to content that is not modified by the compiler
-    document.queryAll('script').forEach((tag) {
-      var src = tag.attributes["src"];
-      if (tag.attributes['type'] == 'application/dart') {
-        tag.remove();
-      } else if (src != null && rewriteUrls) {
-        tag.attributes["src"] = pathInfo.transformUrl(filePath, src);
-      }
-    });
-    document.queryAll('link').forEach((tag) {
-      var href = tag.attributes['href'];
-      var rel = tag.attributes['rel'];
-      if (rel == 'component' || rel == 'components') {
-       tag.remove();
-      } else if (href != null && (rel != 'stylesheet' || !_cssPolyfill) &&
-          rewriteUrls) {
-       tag.attributes['href'] = pathInfo.transformUrl(filePath, href);
-      }
-    });
-
-    if (_cssPolyfill) {
-      var newCss = pathInfo.mangle(path.basename(filePath), '.css', true);
-      var linkElem = new Element.html(
-          '<link rel="stylesheet" type="text/css" href="$newCss">');
-      var head = document.head;
-      head.insertBefore(linkElem,
-          head.hasChildNodes() ? head.nodes.first : null);
-    }
 
     var codeInfo = _fileInfo.userCode;
     if (codeInfo == null) {
@@ -698,4 +671,77 @@ String _findDomField(ElementInfo info, String name) {
     return 'xtag.${toCamelCase(name)}';
   }
   return "attributes['$name']";
+}
+
+/** Trim down the html for the main html page. */
+void transformMainHtml(Document document, FileInfo fileInfo,
+    PathInfo pathInfo, bool hasCss, bool rewriteUrls, Messages messages) {
+
+  var filePath = fileInfo.inputPath;
+
+  bool dartLoaderFound = false;
+  for (var tag in document.queryAll('script')) {
+    var src = tag.attributes['src'];
+    if (src != null && src.split('/').last == 'dart.js') {
+      dartLoaderFound = true;
+    }
+    if (tag.attributes['type'] == 'application/dart') {
+      tag.remove();
+    } else if (src != null && rewriteUrls) {
+      tag.attributes["src"] = pathInfo.transformUrl(filePath, src);
+    }
+  }
+  for (var tag in document.queryAll('link')) {
+    var href = tag.attributes['href'];
+    var rel = tag.attributes['rel'];
+    if (rel == 'component' || rel == 'components') {
+      tag.remove();
+    // TODO(jmesserly): are we not processing the global style sheets anymore?
+    // Are there any conditions where we should be not rewrite stylesheet URLs?
+    } else if (href != null && rewriteUrls) {
+      tag.attributes['href'] = pathInfo.transformUrl(filePath, href);
+    }
+  }
+
+  if (hasCss) {
+    var newCss = pathInfo.mangle(path.basename(filePath), '.css', true);
+    var linkElem = new Element.html(
+        '<link rel="stylesheet" type="text/css" href="$newCss">');
+    var head = document.head;
+    head.insertBefore(linkElem,
+        head.hasChildNodes() ? head.nodes.first : null);
+  }
+
+  // TODO(jmesserly): put this in the global CSS file?
+  // http://dvcs.w3.org/hg/webcomponents/raw-file/tip/spec/templates/index.html#css-additions
+  document.head.nodes.insertAt(0, parseFragment(
+      '<style>template { display: none; }</style>'));
+
+  if (!dartLoaderFound) {
+    document.body.nodes.add(parseFragment(
+        '<script type="text/javascript" src="packages/browser/dart.js">'
+        '</script>\n'));
+  }
+
+  // Insert the "auto-generated" comment after the doctype, otherwise IE will
+  // go into quirks mode.
+  int commentIndex = 0;
+  DocumentType doctype = find(document.nodes, (n) => n is DocumentType);
+  if (doctype != null) {
+    commentIndex = document.nodes.indexOf(doctype) + 1;
+    // TODO(jmesserly): the html5lib parser emits a warning for missing
+    // doctype, but it allows you to put it after comments. Presumably they do
+    // this because some comments won't force IE into quirks mode (sigh). See
+    // this link for more info:
+    //     http://bugzilla.validator.nu/show_bug.cgi?id=836
+    // For simplicity we emit the warning always, like validator.nu does.
+    if (doctype.tagName != 'html' || commentIndex != 1) {
+      _messages.warning('file should start with <!DOCTYPE html> '
+          'to avoid the possibility of it being parsed in quirks mode in IE. '
+          'See http://www.w3.org/TR/html5-diff/#doctype',
+          doctype.sourceSpan, file: filePath);
+    }
+  }
+  document.nodes.insertAt(commentIndex, parseFragment(
+      '\n<!-- This file was auto-generated from $filePath. -->\n'));
 }
