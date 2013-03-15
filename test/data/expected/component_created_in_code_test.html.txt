@@ -1,0 +1,23 @@
+Content-Type: text/plain
+layer at (0,0) size 800x600
+  RenderView at (0,0) size 800x600
+layer at (0,0) size 800x52
+  RenderBlock {HTML} at (0,0) size 800x52
+    RenderBody {BODY} at (8,8) size 784x36
+      RenderBlock (anonymous) at (0,0) size 784x18
+        RenderInline {SAY-HELLO} at (0,0) size 310x18
+          RenderText {#text} at (0,0) size 60x18
+            text run at (0,0) width 60: "Hello "
+          RenderText {#text} at (60,0) size 240x18
+            text run at (60,0) width 240: "component create in html"
+          RenderText {#text} at (300,0) size 10x18
+            text run at (300,0) width 10: "!"
+        RenderText {#text} at (0,0) size 0x0
+        RenderText {#text} at (0,0) size 0x0
+      RenderBlock {DIV} at (0,18) size 784x18
+        RenderText {#text} at (0,0) size 60x18
+          text run at (0,0) width 60: "Hello "
+        RenderText {#text} at (60,0) size 250x18
+          text run at (60,0) width 250: "component created in code"
+        RenderText {#text} at (310,0) size 10x18
+          text run at (310,0) width 10: "!"
