@@ -57,13 +57,20 @@ class TextEditTransaction {
     }
 
     // Sort edits by start location.
-    _edits.sort((x, y) => x.begin - y.begin);
+    _edits.sort();
 
     int consumed = 0;
     for (var edit in _edits) {
       if (consumed > edit.begin) {
-        throw new UnsupportedError('overlapping edits: insert at offset '
-          '${edit.begin} but have consumed $consumed input characters.');
+        var sb = new StringBuffer();
+        sb..write(file.location(edit.begin).formatString)
+            ..write(': overlapping edits. Insert at offset ')
+            ..write(edit.begin)
+            ..write(' but have consumed ')
+            ..write(consumed)
+            ..write(' input characters. List of edits:');
+        for (var e in _edits) sb..write('\n    ')..write(e);
+        throw new UnsupportedError(sb.toString());
       }
 
       // Add characters from the original string between this edit and the last
@@ -81,14 +88,24 @@ class TextEditTransaction {
   }
 }
 
-class _TextEdit {
+class _TextEdit implements Comparable<_TextEdit> {
   final int begin;
   final int end;
-  final dynamic replace;
+
+  /** The replacement used by the edit, can be a string or a [CodePrinter]. */
+  final replace;
 
   _TextEdit(this.begin, this.end, this.replace);
 
   int get length => end - begin;
+
+  String toString() => '(Edit @ $begin,$end: "$replace")';
+
+  int compareTo(_TextEdit other) {
+    int diff = begin - other.begin;
+    if (diff != 0) return diff;
+    return end - other.end;
+  }
 }
 
 /**
