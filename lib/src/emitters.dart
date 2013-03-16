@@ -714,7 +714,7 @@ void transformMainHtml(Document document, FileInfo fileInfo,
 
   // TODO(jmesserly): put this in the global CSS file?
   // http://dvcs.w3.org/hg/webcomponents/raw-file/tip/spec/templates/index.html#css-additions
-  document.head.nodes.insertAt(0, parseFragment(
+  document.head.nodes.insert(0, parseFragment(
       '<style>template { display: none; }</style>'));
 
   if (!dartLoaderFound) {
@@ -736,12 +736,12 @@ void transformMainHtml(Document document, FileInfo fileInfo,
     //     http://bugzilla.validator.nu/show_bug.cgi?id=836
     // For simplicity we emit the warning always, like validator.nu does.
     if (doctype.tagName != 'html' || commentIndex != 1) {
-      _messages.warning('file should start with <!DOCTYPE html> '
+      messages.warning('file should start with <!DOCTYPE html> '
           'to avoid the possibility of it being parsed in quirks mode in IE. '
           'See http://www.w3.org/TR/html5-diff/#doctype',
           doctype.sourceSpan, file: filePath);
     }
   }
-  document.nodes.insertAt(commentIndex, parseFragment(
+  document.nodes.insert(commentIndex, parseFragment(
       '\n<!-- This file was auto-generated from $filePath. -->\n'));
 }

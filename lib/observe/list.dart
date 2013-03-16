@@ -158,9 +158,7 @@ class ObservableList<E> extends Collection<E> implements List<E>, Observable {
     return true;
   }
 
-  // TODO(jmesserly): This should be on List, to match removeAt.
-  // See http://code.google.com/p/dart/issues/detail?id=5375
-  void insertAt(int index, E item) => insertRange(index, 1, item);
+  void insert(int index, E item) => insertRange(index, 1, item);
 
   bool contains(E item) => IterableMixinWorkaround.contains(_list, item);
 
@@ -179,11 +177,16 @@ class ObservableList<E> extends Collection<E> implements List<E>, Observable {
   int lastIndexOf(E element, [int start]) =>
       IterableMixinWorkaround.lastIndexOfList(this, element, start);
 
-  ObservableList<E> getRange(int start, int length)  {
-    if (length == 0) return [];
-    Arrays.rangeCheck(this, start, length);
-    List list = new ObservableList<E>(length);
-    Arrays.copy(this, start, list, 0, length);
+  ObservableList<E> getRange(int start, int length) =>
+      sublist(start, start + length);
+
+  ObservableList<E> sublist(int start, [int end]) {
+    if (end == null) end = length;
+    var len = end - start;
+    if (len == 0) return new ObservableList<E>(0);
+    Arrays.rangeCheck(this, start, len);
+    List list = new ObservableList<E>(len);
+    Arrays.copy(this, start, list, 0, len);
     return list;
   }
 

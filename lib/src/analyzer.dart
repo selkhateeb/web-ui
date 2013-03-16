@@ -598,7 +598,7 @@ class _Analyzer extends TreeVisitor {
       if (!_keepIndentationSpaces) {
         text.value = trimOrCompact(text.value);
       }
-      if (!text.value.isEmpty) new TextInfo(text, _parent);
+      if (text.value != '') new TextInfo(text, _parent);
       return;
     }
 
@@ -763,8 +763,8 @@ class _ElementLoader extends TreeVisitor {
 
     if (rel == 'stylesheet') {
       var uri = Uri.parse(href);
-      if (!uri.domain.isEmpty) return;
-      if (!uri.scheme.isEmpty && uri.scheme != 'package') return;
+      if (uri.domain != '') return;
+      if (uri.scheme != '' && uri.scheme != 'package') return;
     }
 
     var hrefTarget;
