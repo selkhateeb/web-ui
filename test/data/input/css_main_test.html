@@ -63,6 +63,17 @@ main() {
   useShadowDom = false;
 
   Timer.run(() {
+    // Set of linked style sheet urls.
+    var urls = queryAll('link')
+        .where((link) => link.attributes['rel'] == 'stylesheet')
+        .map((link) => link.attributes['href'])
+        .toSet();
+
+    expect(urls.length, 3);
+    expect(urls, contains('css_main_test.html.css'));
+    expect(urls, contains('resources/base.css'));
+    expect(urls, contains('root.css'));
+
     // URI to image in base input directory
     var items = queryAll('#box-1');
     DivElement box1Elem = items[0];
@@ -75,7 +86,7 @@ main() {
     expect(image2.endsWith('/input/resources/glyph.png)'), true);
 
     window.postMessage('done', '*');
-  });
+   });
 }
   </script>
 </body>

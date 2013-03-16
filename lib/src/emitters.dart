@@ -696,9 +696,8 @@ void transformMainHtml(Document document, FileInfo fileInfo,
     var rel = tag.attributes['rel'];
     if (rel == 'component' || rel == 'components') {
       tag.remove();
-    // TODO(jmesserly): are we not processing the global style sheets anymore?
-    // Are there any conditions where we should be not rewrite stylesheet URLs?
-    } else if (href != null && rewriteUrls) {
+    } else if (href != null && rewriteUrls && !hasCss) {
+      // Only rewrite URL if rewrite on and we're not CSS polyfilling.
       tag.attributes['href'] = pathInfo.transformUrl(filePath, href);
     }
   }
