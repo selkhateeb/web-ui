@@ -3,6 +3,14 @@
 This file contains highlights of what changes on each version of the web_ui
 package. This file is normally updated whenever we push a new version to pub.
 
+#### Pub version 0.4.2+3 - Mar 11 2013 (integration SDK 0.4.2+0 r20157)
+  * Add new library "testing/render_test.dart" for running DumpRenderTree
+    tests on code that uses DWC. See example/todomvc for how to use it.
+  * Fix bug with "overlapping edits" that could occur in some situations
+    with part directives.
+  * Fix bugs in CSS version constraint and always copying files to output.
+  * Updates for breaking changes in SDK, and other bug fixes.
+
 #### Pub version 0.4.1+6 - Mar 11 2013 (integration SDK 0.4.1+0 r19425)
   * Work around for dart2js "internal error" in LinkedListIterator.
 
