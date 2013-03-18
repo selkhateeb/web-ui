@@ -7,6 +7,7 @@ test/data/input/example
 test/data/output/
 test/perf/input/example
 test/perf/output/
+test/editor/todomvc/
 extension/output/
 out/
 tool/compile_mirrors.dart
