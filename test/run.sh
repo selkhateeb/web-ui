@@ -62,15 +62,6 @@ if [[ ($TEST_PATTERN == "") ]]; then
   popd
 fi
 
-# First clear the output folder. Otherwise we can miss bugs when we fail to
-# generate a file.
-if [[ -d $DIR/data/output ]]; then
-  rm -rf $DIR/data/output/*
-  ln -s $DIR/packages $DIR/data/output/packages
-else
-  mkdir $DIR/data/output
-fi
-
 # Create a reference to the example directory, so that the output is generated
 # relative to the input directory (reaching out with ../../../ works, but
 # generates the output in the source tree).
