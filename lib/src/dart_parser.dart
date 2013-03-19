@@ -140,6 +140,8 @@ CompilationUnit parseCompilationUnit(String code, {String path,
   // messages properly, so you end up with things like "Unexpected token '%s'".
   // This used to convert parser messages into our messages. Enable this
   // once analyzer is fixed.
+  // TODO(sigmund): once we enable this, we need to fix compiler.dart to clear
+  // out the output of the compiler if we see compilation errors.
   if (false) {
     var file = new File.text(path, code);
     for (var e in errorListener.errors) {

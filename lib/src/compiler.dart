@@ -107,13 +107,11 @@ class Compiler {
     }
     return _parseAndDiscover(_mainPath).then((_) {
       _analyze();
-      if (_messages.hasErrors) return;
-      _transformDart();
-      if (_messages.hasErrors) return;
-      _emit();
       // TODO(jmesserly): need to go through our errors, and figure out if some
       // of them should be warnings instead.
-      if (_messages.hasErrors) output.clear();
+      if (_messages.hasErrors) return;
+      _transformDart();
+      _emit();
     });
   }
 
