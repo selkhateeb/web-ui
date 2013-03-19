@@ -14,9 +14,8 @@ dependencies:
   pathos: ">=0.4.1"
   source_maps: ">=0.4.1 <0.4.2"
   unittest: ">=0.3.5+1"
-  # The following are dev dependencies only, they are not needed by users
-  # of the web_ui package.
+dev_dependencies:
   js: any
   benchmark_harness: ">=1.0.2 <1.0.3"
 environment:
-  sdk: ">=0.4.2+0.r20157"
+  sdk: ">=0.4.2+0.r20193"

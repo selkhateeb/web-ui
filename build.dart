@@ -28,5 +28,5 @@ void main() {
     'example/mdv/model/main.html',
     'example/mdv/table/table.html',
     'example/mdv/style/style.html',
-    'example/todomvc/index.html']);
+    'example/todomvc/web/index.html']);
 }
