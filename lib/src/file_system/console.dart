@@ -19,7 +19,7 @@ class ConsoleFileSystem implements FileSystem {
 
   void writeString(String path, String text) {
     if(!_pending.containsKey(path)) {
-      _pending[path] = new File(path).open(FileMode.WRITE)
+      _pending[path] = new File(path).open(mode: FileMode.WRITE)
           .then((file) => file.writeString(text))
           .then((file) => file.close())
           .whenComplete(() { _pending.remove(path); });
