@@ -3,7 +3,6 @@ pubspec.lock
 .project
 .buildlog
 tags
-test/data/input/example
 test/data/output/
 test/perf/input/example
 test/perf/output/

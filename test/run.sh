@@ -62,14 +62,6 @@ if [[ ($TEST_PATTERN == "") ]]; then
   popd
 fi
 
-# Create a reference to the example directory, so that the output is generated
-# relative to the input directory (reaching out with ../../../ works, but
-# generates the output in the source tree).
-if [[ ! -e $DIR/data/input/example ]]; then
-  ln -s `dirname $DIR`/example/ $DIR/data/input/example
-fi
-
-
 function compare_all {
 # TODO(jmesserly): bash and dart regexp might not be 100% the same. Ideally we
 # could do all the heavy lifting in Dart code, and keep this script as a thin
@@ -87,6 +79,20 @@ function compare_all {
   fail
 }
 
+if [[ -e $DIR/data/input/example ]]; then
+  echo "WARNING: detected old data/input/example symlink."
+  echo "Removing it and rerunning pub install to fix broken example symlinks."
+  echo "See http://dartbug.com/9418 for more information."
+  echo "You should only see this message once."
+  if [[ -e $DIR/packages ]]; then
+    find . -name packages -type l | xargs rm
+  fi
+  rm $DIR/data/input/example
+  pushd $DIR/..
+  pub install
+  popd
+fi
+
 pushd $DIR
 # TODO(jmesserly): dart:io fails if we run_all with an absolute path.
 dart $DART_FLAGS run_all.dart $TEST_PATTERN || compare_all
@@ -94,14 +100,11 @@ popd
 
 
 # Run Dart analyzer to check that we're generating warning clean code.
-OUT_PATTERN="$DIR/data/output/*$TEST_PATTERN*_bootstrap.dart"
+# It's a bit slow, so only do this for TodoMVC and html5_utils tests.
+OUT_PATTERN="$DIR/data/output/html5_utils_*$TEST_PATTERN*_bootstrap.dart $DIR/../example/todomvc/test/out/test/*$TEST_PATTERN*_bootstrap.dart"
 if [[ `ls $OUT_PATTERN 2>/dev/null` != "" ]]; then
   echo -e "\n Analyzing generated code for warnings or type errors."
-  # We filter any error reported from dart:html, but also the details of all
-  # errors (only the line number is shown for errors in our code)
-  # TODO(sigmund): remove the filtering when darbug.com/8132 is fixed
-  analyzer_summary=$DIR/data/output/_analyzer
-  ls $OUT_PATTERN | dart_analyzer --fatal-warnings --fatal-type-errors \
+  ls $OUT_PATTERN 2>/dev/null | dart_analyzer --fatal-warnings --fatal-type-errors \
     --work $DIR/data/output/analyzer/ -batch
   rm -r $DIR/data/output/analyzer/
 fi

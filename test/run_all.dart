@@ -56,6 +56,10 @@ main() {
   addGroup('watcher_test.dart', watcher_test.main);
 
   renderTests('data/input', 'data/input', 'data/expected', 'data/output');
-  renderTests('../example/todomvc', '../example/todomvc/test',
-      '../example/todomvc/test/expected', '../example/todomvc/test/out');
+  exampleTest('../example/component/news');
+  exampleTest('../example/todomvc');
+}
+
+void exampleTest(String path) {
+  renderTests(path, '$path/test', '$path/test/expected', '$path/test/out');
 }
