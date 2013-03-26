@@ -470,11 +470,6 @@ abstract class WebComponent implements Element {
   String get $dom_className => _element.$dom_className;
   set $dom_className(String value) { _element.$dom_className = value; }
 
-  int get $dom_clientHeight => _element.$dom_clientHeight;
-  int get $dom_clientLeft => _element.$dom_clientLeft;
-  int get $dom_clientTop => _element.$dom_clientTop;
-  int get $dom_clientWidth => _element.$dom_clientWidth;
-
   @deprecated
   int get clientHeight => client.height;
 
@@ -492,11 +487,6 @@ abstract class WebComponent implements Element {
   Element get $dom_firstElementChild => _element.$dom_firstElementChild;
 
   Element get $dom_lastElementChild => _element.$dom_lastElementChild;
-
-  int get $dom_offsetHeight => _element.$dom_offsetHeight;
-  int get $dom_offsetLeft => _element.$dom_offsetLeft;
-  int get $dom_offsetTop => _element.$dom_offsetTop;
-  int get $dom_offsetWidth => _element.$dom_offsetWidth;
 
   @deprecated
   int get offsetHeight => offset.height;
