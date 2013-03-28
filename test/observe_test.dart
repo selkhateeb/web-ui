@@ -10,7 +10,7 @@ import 'package:unittest/compact_vm_config.dart';
 import 'package:unittest/unittest.dart';
 import 'package:web_ui/observe.dart';
 import 'package:web_ui/observe/observable.dart' show hasObservers;
-import 'package:web_ui/src/utils.dart' show setImmediate;
+import 'package:web_ui/observe/utils.dart' show setImmediate;
 
 main() {
   useCompactVMConfiguration();

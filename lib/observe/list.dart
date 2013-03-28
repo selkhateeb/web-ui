@@ -6,7 +6,7 @@ library web_ui.observe.list;
 
 import 'dart:collection';
 import 'observable.dart';
-import 'package:web_ui/src/utils.dart' show Arrays;
+import 'package:web_ui/observe/utils.dart' show Arrays;
 
 // TODO(jmesserly): this should extend the real list implementation.
 // See http://dartbug.com/2600. The workaround was to copy+paste lots of code

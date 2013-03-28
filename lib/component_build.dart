@@ -21,7 +21,6 @@ library build_utils;
 import 'dart:async';
 import 'dart:io';
 import 'package:args/args.dart';
-import 'package:pathos/path.dart' as path;
 
 import 'dwc.dart' as dwc;
 import 'src/utils.dart';

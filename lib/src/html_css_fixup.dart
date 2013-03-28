@@ -9,11 +9,12 @@ import 'dart:json' as json;
 import 'package:csslib/visitor.dart';
 import 'package:html5lib/dom.dart';
 import 'package:html5lib/dom_parsing.dart';
-import 'package:pathos/path.dart' as path;
 
 import 'info.dart';
 import 'messages.dart';
 import 'options.dart';
+import 'paths.dart';
+import 'utils.dart';
 
 /**
  *  If processCss is enabled, prefix any component's HTML attributes for id or
@@ -184,9 +185,9 @@ class UriVisitor extends Visitor {
    */
   final String _pathToOriginalCss;
 
-  factory UriVisitor(PathInfo pathInfo, String cssPath, bool rewriteUrl) {
+  factory UriVisitor(PathMapper pathMapper, String cssPath, bool rewriteUrl) {
     var cssDir = path.dirname(cssPath);
-    var outCssDir = rewriteUrl ? pathInfo.outputDirPath(cssPath)
+    var outCssDir = rewriteUrl ? pathMapper.outputDirPath(cssPath)
         : path.dirname(cssPath);
     return new UriVisitor._internal(path.relative(cssDir, from: outCssDir));
   }

@@ -12,7 +12,6 @@ import 'package:csslib/parser.dart' as css;
 import 'package:csslib/visitor.dart' show InfoVisitor, StyleSheet, treeToDebugString;
 import 'package:html5lib/dom.dart';
 import 'package:html5lib/parser.dart';
-import 'package:pathos/path.dart' as path;
 
 import 'analyzer.dart';
 import 'code_printer.dart';
@@ -27,6 +26,7 @@ import 'info.dart';
 import 'messages.dart';
 import 'observable_transform.dart' show transformObservables;
 import 'options.dart';
+import 'paths.dart';
 import 'refactor.dart';
 import 'utils.dart';
 
@@ -39,7 +39,7 @@ import 'utils.dart';
  */
 Document parseHtml(contents, String sourcePath, Messages messages) {
   var parser = new HtmlParser(contents, generateSpans: true,
-      sourceUrl: sourcePath.toString());
+      sourceUrl: sourcePath);
   var document = parser.parse();
 
   // Note: errors aren't fatal in HTML (unless strict mode is on).
@@ -58,7 +58,7 @@ class Compiler {
   final List<OutputFile> output = <OutputFile>[];
 
   String _mainPath;
-  PathInfo _pathInfo;
+  PathMapper _pathMapper;
   Messages _messages;
 
   FutureGroup _tasks;
@@ -87,15 +87,15 @@ class Compiler {
     // Normalize paths - all should be relative or absolute paths.
     if (path.isAbsolute(_mainPath) || path.isAbsolute(baseDir) ||
         path.isAbsolute(outputDir) || path.isAbsolute(packageRoot)) {
-      if (path.isRelative(_mainPath)) _mainPath = path.absolute(_mainPath);
-      if (path.isRelative(baseDir)) baseDir = path.absolute(baseDir);
-      if (path.isRelative(outputDir)) outputDir = path.absolute(outputDir);
+      if (path.isRelative(_mainPath)) _mainPath = path.resolve(_mainPath);
+      if (path.isRelative(baseDir)) baseDir = path.resolve(baseDir);
+      if (path.isRelative(outputDir)) outputDir = path.resolve(outputDir);
       if (path.isRelative(packageRoot)) {
-        packageRoot = path.absolute(packageRoot);
+        packageRoot = path.resolve(packageRoot);
       }
     }
-    _pathInfo = new PathInfo(baseDir, outputDir, packageRoot,
-        options.forceMangle);
+    _pathMapper = new PathMapper(
+        baseDir, outputDir, packageRoot, options.forceMangle);
   }
 
   /** Compile the application starting from the given [mainFile]. */
@@ -129,7 +129,7 @@ class Compiler {
   }
 
   bool _shouldProcessFile(SourceFile file) =>
-      file != null && _pathInfo.checkInputPath(file.path, _messages);
+      file != null && _pathMapper.checkInputPath(file.path, _messages);
 
   void _processHtmlFile(SourceFile file) {
     if (!_shouldProcessFile(file)) return;
@@ -139,7 +139,7 @@ class Compiler {
     files.add(file);
 
     var fileInfo = _time('Analyzed definitions', file.path,
-        () => analyzeDefinitions(file, _pathInfo.packageRoot, _messages,
+        () => analyzeDefinitions(file, _pathMapper.packageRoot, _messages,
             isEntryPoint: isEntryPoint));
     info[file.path] = fileInfo;
 
@@ -183,23 +183,22 @@ class Compiler {
 
   void _setOutputFilenames(FileInfo fileInfo) {
     var filePath = fileInfo.dartCodePath;
-    fileInfo.outputFilename = _pathInfo.mangle(path.basename(filePath),
+    fileInfo.outputFilename = _pathMapper.mangle(path.basename(filePath),
         '.dart', path.extension(filePath) == '.html');
     for (var component in fileInfo.declaredComponents) {
       var externalFile = component.externalFile;
       var name = null;
       if (externalFile != null) {
-        name = _pathInfo.mangle(path.basename(externalFile), '.dart');
+        name = _pathMapper.mangle(path.basename(externalFile), '.dart');
       } else {
         var declaringFile = component.declaringFile;
         var prefix = path.basename(declaringFile.inputPath);
         if (declaringFile.declaredComponents.length == 1
             && !declaringFile.codeAttached && !declaringFile.isEntryPoint) {
-          name = _pathInfo.mangle(prefix, '.dart', true);
+          name = _pathMapper.mangle(prefix, '.dart', true);
         } else {
-          var componentSegment = component.tagName
-              .toLowerCase().replaceAll('-', '_');
-          name = _pathInfo.mangle('${prefix}_$componentSegment', '.dart', true);
+          var componentName = component.tagName.replaceAll('-', '_');
+          name = _pathMapper.mangle('${prefix}_$componentName', '.dart', true);
         }
       }
       component.outputFilename = name;
@@ -250,7 +249,7 @@ class Compiler {
     fileInfo.inlinedCode =
         parseDartCode(fileInfo.inputPath, dartFile.code, _messages);
     fileInfo.outputFilename =
-        _pathInfo.mangle(path.basename(dartFile.path), '.dart', false);
+        _pathMapper.mangle(path.basename(dartFile.path), '.dart', false);
 
     _processImports(fileInfo);
   }
@@ -303,7 +302,7 @@ class Compiler {
       // Don't process our own package -- we'll implement @observable manually.
       if (uri.startsWith('package:web_ui/')) return null;
 
-      return path.join(_pathInfo.packageRoot, uri.substring(8));
+      return path.join(_pathMapper.packageRoot, uri.substring(8));
     } else {
       return path.normalize(
           path.join(path.dirname(libInfo.dartCodePath), uri));
@@ -447,7 +446,7 @@ class Compiler {
   }
 
   void _fixImports(LibraryInfo library) {
-    var fileOutputPath = _pathInfo.outputLibraryPath(library);
+    var fileOutputPath = _pathMapper.outputLibraryPath(library);
 
     // Fix imports. Modified files must use the generated path, otherwise
     // we need to make the path relative to the input.
@@ -460,10 +459,10 @@ class Compiler {
       String newUri = null;
       if (importInfo.modified) {
         // Use the generated URI for this file.
-        newUri = _pathInfo.relativePath(library, importInfo).toString();
+        newUri = _pathMapper.relativeUrl(library, importInfo);
       } else if (options.rewriteUrls) {
         // Get the relative path to the input file.
-        newUri = _pathInfo.transformUrl(library.dartCodePath,
+        newUri = _pathMapper.transformUrl(library.dartCodePath,
             directive.uri.value);
       }
       if (newUri != null) {
@@ -522,7 +521,7 @@ class Compiler {
   void _emitMainDart(SourceFile file) {
     var fileInfo = info[file.path];
     var printer = new EntryPointEmitter(fileInfo)
-        .run(_pathInfo, _edits[fileInfo.userCode], options.rewriteUrls);
+        .run(_pathMapper, _edits[fileInfo.userCode], options.rewriteUrls);
     _emitFileAndSourceMaps(fileInfo, printer, fileInfo.dartCodePath);
   }
 
@@ -533,21 +532,21 @@ class Compiler {
 
     var bootstrapName = '${path.basename(file.path)}_bootstrap.dart';
     var bootstrapPath = path.join(path.dirname(file.path), bootstrapName);
-    var bootstrapOutPath = _pathInfo.outputPath(bootstrapPath, '');
+    var bootstrapOutPath = _pathMapper.outputPath(bootstrapPath, '');
     var bootstrapOutName = path.basename(bootstrapOutPath);
     output.add(new OutputFile(bootstrapOutPath, codegen.bootstrapCode(
-          _pathInfo.relativePath(new FileInfo(bootstrapPath), fileInfo),
+          _pathMapper.relativeUrl(new FileInfo(bootstrapPath), fileInfo),
           _useObservers)));
 
     var document = file.document;
     var hasCss = _emitAllCss();
-    transformMainHtml(document, fileInfo, _pathInfo, hasCss,
+    transformMainHtml(document, fileInfo, _pathMapper, hasCss,
         options.rewriteUrls, _messages);
 
     document.body.nodes.add(parseFragment(
         '<script type="application/dart" src="$bootstrapOutName"></script>'));
 
-    output.add(new OutputFile(_pathInfo.outputPath(file.path, '.html'),
+    output.add(new OutputFile(_pathMapper.outputPath(file.path, '.html'),
         document.outerHtml, source: file.path));
   }
 
@@ -569,12 +568,12 @@ class Compiler {
       if (file.isStyleSheet) {
         for (var styleSheet in fileInfo.styleSheets) {
           // Translate any URIs in CSS.
-          var uriVisitor = new UriVisitor(_pathInfo, fileInfo.inputPath,
+          var uriVisitor = new UriVisitor(_pathMapper, fileInfo.inputPath,
               options.rewriteUrls);
           uriVisitor.visitTree(styleSheet);
 
           if (options.debugCss) {
-            print('\nCSS source: ${fileInfo.inputPath.toString()}');
+            print('\nCSS source: ${fileInfo.inputPath}');
             print('==========\n');
             print(treeToDebugString(styleSheet));
           }
@@ -587,7 +586,7 @@ class Compiler {
         }
 
         // Emit the linked style sheet in the output directory.
-        var outCss = _pathInfo.outputPath(fileInfo.inputPath, '');
+        var outCss = _pathMapper.outputPath(fileInfo.inputPath, '');
         output.add(new OutputFile(outCss, css.toString()));
       }
     }
@@ -600,7 +599,7 @@ class Compiler {
           for (var styleSheet in component.styleSheets) {
 
             // Translate any URIs in CSS.
-            var uriVisitor = new UriVisitor(_pathInfo, fileInfo.inputPath,
+            var uriVisitor = new UriVisitor(_pathMapper, fileInfo.inputPath,
                 options.rewriteUrls);
             uriVisitor.visitTree(styleSheet);
 
@@ -622,7 +621,7 @@ class Compiler {
 
     if (buff.isEmpty) return false;
 
-    var cssPath = _pathInfo.outputPath(_mainPath, '.css', true);
+    var cssPath = _pathMapper.outputPath(_mainPath, '.css', true);
     output.add(new OutputFile(cssPath, buff.toString()));
     return true;
   }
@@ -637,7 +636,7 @@ class Compiler {
             ' - first stylesheet used.', null, file: component.externalFile);
       }
       var printer = new WebComponentEmitter(fileInfo, _messages)
-          .run(component, _pathInfo, _edits[component.userCode]);
+          .run(component, _pathMapper, _edits[component.userCode]);
       _emitFileAndSourceMaps(component, printer, component.externalFile);
     }
   }
@@ -651,7 +650,7 @@ class Compiler {
     // Bail if we had an error generating the code for the file.
     if (printer == null) return;
 
-    var libPath = _pathInfo.outputLibraryPath(lib);
+    var libPath = _pathMapper.outputLibraryPath(lib);
     var dir = path.dirname(libPath);
     var filename = path.basename(libPath);
     printer.add('\n//@ sourceMappingURL=$filename.map');

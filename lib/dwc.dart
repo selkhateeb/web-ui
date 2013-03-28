@@ -8,7 +8,6 @@ library dwc;
 import 'dart:async';
 import 'dart:io';
 import 'package:logging/logging.dart' show Level;
-import 'package:pathos/path.dart' as path;
 
 import 'src/compiler.dart';
 import 'src/file_system.dart';
@@ -56,7 +55,7 @@ class CompilerResult {
       }
       outs[out.path] = out.source;
     }
-    var inputs = files.map((f) => f.path.toString()).toList();
+    var inputs = files.map((f) => f.path).toList();
     var msgs = messages.messages.map((m) => m.toString()).toList();
     return new CompilerResult(success, outs, inputs, msgs, file);
   }

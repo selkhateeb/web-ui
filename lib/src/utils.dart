@@ -2,10 +2,19 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-library web_components.src.utils;
+library web_ui.src.utils;
 
 import 'dart:async';
-import 'dart:isolate';
+
+import 'package:pathos/path.dart' show Builder;
+
+
+/**
+ * An instance of the pathos library builder. We could just use the default
+ * builder in pathos, but we add this indirection to make it possible to run
+ * unittest for windows paths.
+ */
+Builder path = new Builder();
 
 /**
  * Converts a string name with hyphens into an identifier, by removing hyphens
@@ -24,13 +33,6 @@ String toCamelCase(String hyphenedName, {bool startUppercase: false}) {
   }
   return segments.join('');
 }
-
-// TODO(jmesserly): helpers to combine hash codes. Reuse these from somewhere.
-hash2(x, y) => x.hashCode * 31 + y.hashCode;
-
-hash3(x, y, z) => hash2(hash2(x, y), z);
-
-hash4(w, x, y, z) => hash2(hash2(w, x), hash2(y, z));
 
 /**
  * Invokes [callback], logs how long it took to execute in ms, and returns
@@ -246,21 +248,6 @@ String trimOrCompact(String text) {
   return text.substring(first, last + 1);
 }
 
-// TODO(jmesserly): replace with something in dart:async, as long as it is based
-// on window.setImmediate/mutation observers/postMessage and not setTimeout(0)
-/**
- * Adds an event to call [callback], so the event loop will call this after the
- * current stack has unwound.
- */
-void setImmediate(void callback()) {
-  var port = new ReceivePort();
-  port.receive((msg, sendPort) {
-    port.close();
-    callback();
-  });
-  port.toSendPort().send(null);
-}
-
 /** Iterates through an infinite sequence, starting from zero. */
 class IntIterator implements Iterator<int> {
   int _next = -1;
@@ -281,36 +268,3 @@ class Hashable {
   final int hashCode = ++_nextHash;
 }
 
-
-class Arrays {
-  static void copy(List src, int srcStart,
-                   List dst, int dstStart, int count) {
-    if (srcStart == null) srcStart = 0;
-    if (dstStart == null) dstStart = 0;
-
-    if (srcStart < dstStart) {
-      for (int i = srcStart + count - 1, j = dstStart + count - 1;
-           i >= srcStart; i--, j--) {
-        dst[j] = src[i];
-      }
-    } else {
-      for (int i = srcStart, j = dstStart; i < srcStart + count; i++, j++) {
-        dst[j] = src[i];
-      }
-    }
-  }
-
-  static void rangeCheck(List a, int start, int length) {
-    if (length < 0) {
-      throw new ArgumentError("negative length $length");
-    }
-    if (start < 0 ) {
-      String message = "$start must be greater than or equal to 0";
-      throw new RangeError(message);
-    }
-    if (start + length > a.length) {
-      String message = "$start + $length must be in the range [0..${a.length})";
-      throw new RangeError(message);
-    }
-  }
-}

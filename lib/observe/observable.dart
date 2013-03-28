@@ -21,7 +21,7 @@ import 'reference.dart';
 import 'set.dart';
 // TODO(jmesserly): see if we can switch to Future.immediate. We need it to be
 // fast (next microtask) like our version, though. http://dartbug.com/8757
-import 'package:web_ui/src/utils.dart' show setImmediate, hash3, hash4;
+import 'package:web_ui/observe/utils.dart' show setImmediate, hash3, hash4;
 import 'package:web_ui/src/linked_list.dart';
 
 /**

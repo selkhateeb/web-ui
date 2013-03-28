@@ -26,7 +26,7 @@ import 'html5_utils_test.dart' as html5_utils_test;
 import 'html_cleaner_test.dart' as html_cleaner_test;
 import 'linked_list_test.dart' as linked_list_test;
 import 'observe_test.dart' as observe_test;
-import 'path_info_test.dart' as path_info_test;
+import 'paths_test.dart' as paths_test;
 import 'refactor_test.dart' as refactor_test;
 import 'utils_test.dart' as utils_test;
 import 'watcher_test.dart' as watcher_test;
@@ -50,7 +50,7 @@ main() {
   addGroup('html_cleaner_test.dart', html_cleaner_test.main);
   addGroup('linked_list_test.dart', linked_list_test.main);
   addGroup('observe_test.dart', observe_test.main);
-  addGroup('path_info_test.dart', path_info_test.main);
+  addGroup('paths_test.dart', paths_test.main);
   addGroup('refactor_test.dart', refactor_test.main);
   addGroup('utils_test.dart', utils_test.main);
   addGroup('watcher_test.dart', watcher_test.main);

@@ -11,7 +11,6 @@ import 'package:csslib/visitor.dart';
 import 'package:html5lib/dom.dart';
 import 'package:html5lib/dom_parsing.dart';
 import 'package:html5lib/parser.dart';
-import 'package:pathos/path.dart' as path;
 import 'package:source_maps/span.dart' show Span, FileLocation;
 
 import 'code_printer.dart';
@@ -22,6 +21,7 @@ import 'html5_utils.dart';
 import 'html_css_fixup.dart';
 import 'info.dart';
 import 'messages.dart';
+import 'paths.dart';
 import 'refactor.dart';
 import 'utils.dart';
 
@@ -388,7 +388,7 @@ class WebComponentEmitter extends RecursiveEmitter {
   WebComponentEmitter(FileInfo info, this.messages)
       : super(info, new Context(isClass: true, indent: 1));
 
-  CodePrinter run(ComponentInfo info, PathInfo pathInfo,
+  CodePrinter run(ComponentInfo info, PathMapper pathMapper,
       TextEditTransaction transaction) {
     var elemInfo = info.elemInfo;
 
@@ -462,7 +462,7 @@ class WebComponentEmitter extends RecursiveEmitter {
     var header = new CodePrinter(0);
     header.add(codegen.header(path.basename(info.declaringFile.inputPath),
         libraryName));
-    emitImports(codeInfo, info, pathInfo, header);
+    emitImports(codeInfo, info, pathMapper, header);
     header.addLine('');
     transaction.edit(0, codeInfo.directivesEnd, header);
 
@@ -527,7 +527,7 @@ class EntryPointEmitter extends RecursiveEmitter {
   EntryPointEmitter(FileInfo fileInfo)
       : super(fileInfo, new Context(indent: 1));
 
-  CodePrinter run(PathInfo pathInfo, TextEditTransaction transaction,
+  CodePrinter run(PathMapper pathMapper, TextEditTransaction transaction,
       bool rewriteUrls) {
 
     var filePath = _fileInfo.inputPath;
@@ -547,7 +547,7 @@ class EntryPointEmitter extends RecursiveEmitter {
         ? codeInfo.libraryName : _fileInfo.libraryName;
     var header = new CodePrinter(0);
     header.add(codegen.header(path.basename(filePath), libraryName));
-    emitImports(codeInfo, _fileInfo, pathInfo, header);
+    emitImports(codeInfo, _fileInfo, pathMapper, header);
     header..addLine('')
           ..addLine('')
           ..addLine('// Original code');
@@ -570,7 +570,7 @@ class EntryPointEmitter extends RecursiveEmitter {
   }
 }
 
-void emitImports(DartCodeInfo codeInfo, LibraryInfo info, PathInfo pathInfo,
+void emitImports(DartCodeInfo codeInfo, LibraryInfo info, PathMapper pathMapper,
     CodePrinter printer) {
   var seenImports = new Set();
   addUnique(String importString, [location]) {
@@ -582,14 +582,14 @@ void emitImports(DartCodeInfo codeInfo, LibraryInfo info, PathInfo pathInfo,
 
   // Add imports only for those components used by this component.
   info.usedComponents.keys.forEach(
-      (c) => addUnique("import '${pathInfo.relativePath(info, c)}';"));
+      (c) => addUnique("import '${pathMapper.relativeUrl(info, c)}';"));
 
   if (info is ComponentInfo) {
     // Inject an import to the base component.
     ComponentInfo component = info;
     var base = info.extendsComponent;
     if (base != null) {
-      addUnique("import '${pathInfo.relativePath(info, base)}';");
+      addUnique("import '${pathMapper.relativeUrl(info, base)}';");
     }
   }
 
@@ -675,7 +675,7 @@ String _findDomField(ElementInfo info, String name) {
 
 /** Trim down the html for the main html page. */
 void transformMainHtml(Document document, FileInfo fileInfo,
-    PathInfo pathInfo, bool hasCss, bool rewriteUrls, Messages messages) {
+    PathMapper pathMapper, bool hasCss, bool rewriteUrls, Messages messages) {
 
   var filePath = fileInfo.inputPath;
 
@@ -688,7 +688,7 @@ void transformMainHtml(Document document, FileInfo fileInfo,
     if (tag.attributes['type'] == 'application/dart') {
       tag.remove();
     } else if (src != null && rewriteUrls) {
-      tag.attributes["src"] = pathInfo.transformUrl(filePath, src);
+      tag.attributes["src"] = pathMapper.transformUrl(filePath, src);
     }
   }
   for (var tag in document.queryAll('link')) {
@@ -698,12 +698,12 @@ void transformMainHtml(Document document, FileInfo fileInfo,
       tag.remove();
     } else if (href != null && rewriteUrls && !hasCss) {
       // Only rewrite URL if rewrite on and we're not CSS polyfilling.
-      tag.attributes['href'] = pathInfo.transformUrl(filePath, href);
+      tag.attributes['href'] = pathMapper.transformUrl(filePath, href);
     }
   }
 
   if (hasCss) {
-    var newCss = pathInfo.mangle(path.basename(filePath), '.css', true);
+    var newCss = pathMapper.mangle(path.basename(filePath), '.css', true);
     var linkElem = new Element.html(
         '<link rel="stylesheet" type="text/css" href="$newCss">');
     var head = document.head;
