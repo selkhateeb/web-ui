@@ -440,6 +440,8 @@ class _Analyzer extends TreeVisitor {
       eventStream = 'onChange';
     } else if (isInput && name == 'value' && inputType == 'radio') {
       return _addRadioValueBinding(info, binding);
+    } else if (isInput && name == 'files' && inputType == 'file') {
+      eventStream = 'onChange';
     } else if (isTextArea && name == 'value' || isInput &&
         (name == 'value' || name == 'valueAsDate' || name == 'valueAsNumber')) {
       // Input event is fired more frequently than "change" on some browsers.
