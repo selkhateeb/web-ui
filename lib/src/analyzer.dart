@@ -130,7 +130,6 @@ class _Analyzer extends TreeVisitor {
   void visitElementInfo(ElementInfo info) {
     var node = info.node;
 
-    if (node.id != '') info.identifier = '__${toCamelCase(node.id)}';
     if (node.tagName == 'body' || (_currentInfo is ComponentInfo
           && (_currentInfo as ComponentInfo).template == node)) {
       info.isRoot = true;
@@ -188,7 +187,7 @@ class _Analyzer extends TreeVisitor {
         var id = '__e-${_uniqueIds.current}';
         info.identifier = toCamelCase(id);
         // If it's not created in code, we'll query the element by it's id.
-        if (!info.createdInCode) node.attributes['id'] = id;
+        if (!info.createdInCode && node.id == '') node.attributes['id'] = id;
       }
     }
   }
@@ -372,6 +371,15 @@ class _Analyzer extends TreeVisitor {
       attrInfo = _readStyleAttribute(info, value);
     } else if (name == 'class') {
       attrInfo = _readClassAttribute(info, value);
+    } else if (name == 'id') {
+      if (value.contains("{{")) {
+        _messages.warning(
+            'Sorry, bindings in "id" attributes are not yet supported. '
+            'These bindings will be ignored. See '
+            'https://github.com/dart-lang/web-ui/issues/284 for more details.',
+            info.node.sourceSpan, file: _fileInfo.inputPath);
+        return;
+      }
     } else {
       attrInfo = _readAttribute(info, name, value);
     }

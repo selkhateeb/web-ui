@@ -42,56 +42,82 @@ main() {
       expect(elem.outerHtml, input);
     });
 
-    test('id extracted - shallow element', () {
-      var input = '<div id="foo"></div>';
-      var info = analyzeElement(parseSubtree(input));
-      expect(info.node.id, equals('foo'));
-      expect(info.identifier, equals('__foo'));
-    });
+    group('id not used for variable names', () {
+      setUp(() {
+        // Ideally we should inherit the outer setup function. See:
+        // dartbug.com/6685
+        messages = new Messages.silent();
+      });
 
-    test('id extracted - deep element', () {
-      var input = '<div><div><div id="foo"></div></div></div>';
-      var info = analyzeElement(parseSubtree(input));
-      expect(info.identifier, isNull);
-      expect(info.children[0].identifier, isNull);
-      expect(info.children[0].children[0].identifier, equals('__foo'));
+      test('shallow element', () {
+        var input = '<div id="foo"></div>';
+        var info = analyzeElement(parseSubtree(input));
+        expect(info.node.id, equals('foo'));
+        expect(info.identifier, isNull);
+      });
+
+      test('deep element', () {
+        var input = '<div><div><div id="foo"></div></div></div>';
+        var info = analyzeElement(parseSubtree(input));
+        expect(info.identifier, isNull);
+        expect(info.children[0].identifier, isNull);
+        expect(info.children[0].children[0].identifier, isNull);
+      });
+
+      test('shallow element - identifier created', () {
+        var input = '<div id="foo" on-click="x"></div>';
+        var info = analyzeElement(parseSubtree(input));
+        expect(info.node.id, equals('foo'));
+        expect(info.identifier, '__e0');
+      });
+
+      test('many id names', () {
+        identifierOf(String id) {
+          var input = '<div id="$id" on-click="x"></div>';
+          var info = analyzeElement(parseSubtree(input));
+          return info.identifier;
+        }
+        expect(identifierOf('foo-bar'), '__e0');
+        expect(identifierOf('foo-b'), '__e0');
+        expect(identifierOf('foo-'), '__e0');
+        expect(identifierOf('foo--bar'), '__e0');
+        expect(identifierOf('foo--bar---z'), '__e0');
+      });
+
+      test('no id', () {
+        var input = '<div></div>';
+        var info = analyzeElement(parseSubtree(input));
+        expect(info.identifier, isNull);
+      });
+
+      test('id contains bindings', () {
+        var input = '<div id="foo-{{x}}"></div>';
+        var node = parseSubtree(input);
+        var info = analyzeElement(node);
+        expect(info.identifier, isNull,
+            reason: 'Bindings in "id" are currently ignored.');
+        expect(messages.length, 1);
+        expect(messages[0].message,
+            contains('bindings in "id" attributes are not yet supported'));
+        expect(messages[0].span, equals(node.sourceSpan));
+      });
+
+      test('id contains bindings, node has other bindings', () {
+        var input = '<div id="foo-{{x}}" on-click="y"></div>';
+        var node = parseSubtree(input);
+        var info = analyzeElement(node);
+        expect(info.identifier, '__e0');
+        expect(messages.length, 1);
+        expect(messages[0].message,
+            contains('bindings in "id" attributes are not yet supported'));
+        expect(messages[0].span, equals(node.sourceSpan));
+      });
     });
 
     test('ElementInfo.toString()', () {
       var input = '<div id="foo"></div>';
       var info = analyzeElement(parseSubtree(input));
       expect(info.toString().startsWith('#<ElementInfo '), true);
-    });
-
-    test('id as identifier - found in dom', () {
-      var input = '<div id="foo-bar"></div>';
-      var info = analyzeElement(parseSubtree(input));
-      expect(info.identifier, equals('__fooBar'));
-    });
-
-    test('id as identifier - many id names', () {
-      identifierOf(String id) {
-        var input = '<div id="$id"></div>';
-        var info = analyzeElement(parseSubtree(input));
-        return info.identifier;
-      }
-      expect(identifierOf('foo-bar'), equals('__fooBar'));
-      expect(identifierOf('foo-b'), equals('__fooB'));
-      expect(identifierOf('foo-'), equals('__foo'));
-      expect(identifierOf('foo--bar'), equals('__fooBar'));
-      expect(identifierOf('foo--bar---z'), equals('__fooBarZ'));
-    });
-
-    test('id as identifier - deep element', () {
-      var input = '<div><div><div id="foo-ba"></div></div></div>';
-      var info = analyzeElement(parseSubtree(input));
-      expect(info.children[0].children[0].identifier, equals('__fooBa'));
-    });
-
-    test('id as identifier - no id', () {
-      var input = '<div></div>';
-      var info = analyzeElement(parseSubtree(input));
-      expect(info.identifier, isNull);
     });
 
     test('hasDataBinding - attribute w/o data', () {

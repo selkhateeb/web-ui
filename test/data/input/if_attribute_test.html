@@ -23,7 +23,7 @@ BSD-style license that can be found in the LICENSE file.
   main() {
     Timer.run(() {
       expect(document.query('#test'), isNull);
-      var placeholder = document.body.query('div#__e-1');
+      var placeholder = document.body.query('div#__e-2');
       expect(placeholder, isNotNull);
       expect(placeholder.style.display, equals('none'));
       x = 3;
