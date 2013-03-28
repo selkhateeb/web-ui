@@ -3,6 +3,15 @@
 This file contains highlights of what changes on each version of the web_ui
 package. This file is normally updated whenever we push a new version to pub.
 
+#### Pub version 0.4.3+1 - Mar 28 2013 (integration SDK 0.4.3+5 r20602)
+  * Bug fixes: fix import-urls in windows (issue #420)
+  * Provide warnings when using bindings in ID attributes.
+
+#### Pub version 0.4.2+5 - Mar 25 2013 (integration SDK 0.4.2+0 r20157)
+  * Bug fix: fix bug where bogus error messages were given when trying to
+    compile files in windows (input file mistakenly thought as being in the
+    output directory)
+
 #### Pub version 0.4.2+3 - Mar 11 2013 (integration SDK 0.4.2+0 r20157)
   * Add new library "testing/render_test.dart" for running DumpRenderTree
     tests on code that uses DWC. See example/todomvc for how to use it.
