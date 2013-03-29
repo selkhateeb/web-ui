@@ -7,6 +7,7 @@ library web_ui.observe.set;
 import 'dart:collection';
 import 'observable.dart';
 import 'map.dart' show MapFactory;
+import 'package:web_ui/observe/utils.dart' show CollectionBase;
 
 /**
  * Represents an observable set of model values. If any items are added,
@@ -16,11 +17,8 @@ import 'map.dart' show MapFactory;
 // TODO(jmesserly): ideally this could be based ObservableMap, or Dart
 // would have a built in Set<->Map adapter as suggested in
 // https://code.google.com/p/dart/issues/detail?id=5603
-class ObservableSet<E> extends Collection<E> implements Set<E>, Observable {
-  // TODO(jmesserly): replace with mixin!
-  final int hashCode = ++Observable.$_nextHashCode;
-  var $_observers;
-  List $_changes;
+class ObservableSet<E> extends CollectionBase with Observable
+    implements Set<E> {
 
   final Map<E, Object> _map;
 

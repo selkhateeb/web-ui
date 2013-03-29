@@ -81,7 +81,7 @@ void transformClass(ClassDeclaration cls, TextEditTransaction code,
 
   if (instanceFields.length == 0) return;
 
-  implementObservable(cls, code);
+  mixinObservable(cls, code);
 
   // Fix initializers, because they aren't allowed to call the setter.
   for (var member in cls.members) {
@@ -92,26 +92,18 @@ void transformClass(ClassDeclaration cls, TextEditTransaction code,
 }
 
 
-/** Adds "implements Observable" and associated implementation. */
-// TODO(jmesserly): this should be "with Observable" once mixins work on VM.
-void implementObservable(ClassDeclaration cls, TextEditTransaction code) {
-  if (cls.implementsClause != null) {
-    var pos = cls.implementsClause.end;
+/** Adds "with Observable" and associated implementation. */
+void mixinObservable(ClassDeclaration cls, TextEditTransaction code) {
+  if (cls.withClause != null) {
+    var pos = cls.withClause.end;
     code.edit(pos, pos, ', Observable');
+  } else if (cls.extendsClause != null) {
+    var pos = cls.leftBracket.offset;
+    code.edit(pos, pos, ' with Observable ');
   } else {
     var pos = cls.leftBracket.offset;
-    code.edit(pos, pos, ' implements Observable');
+    code.edit(pos, pos, ' extends Observable ');
   }
-
-  // TODO(jmesserly): remove this once we have mixins!
-  var pos = cls.rightBracket.offset;
-  var indent = guessIndent(code.original, pos - 1); // -1 to get previous line
-
-  code.edit(pos, pos, r'''
-final int hashCode = ++__observe.Observable.$_nextHashCode;
-var $_observers;
-List $_changes;
-'''.replaceAll('\n', '\n$indent'));
 }
 
 bool hasKeyword(Token token, Keyword keyword) =>

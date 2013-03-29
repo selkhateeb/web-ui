@@ -61,3 +61,7 @@ class Arrays {
     }
   }
 }
+
+// TODO(jmesserly): bogus type to workaround spurious VM bug with generic base
+// class and mixins.
+abstract class CollectionBase extends Collection<dynamic> {}

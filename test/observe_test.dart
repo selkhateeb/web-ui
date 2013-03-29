@@ -345,7 +345,7 @@ main() {
     // TODO(jmesserly): need all standard List tests.
 
     test('observe length', () {
-      var list = new ObservableList();
+      var list = new ObservableList<int>();
       var notification = null;
       observe(() => list.length, (n) { notification = n; });
 
@@ -585,7 +585,7 @@ main() {
     // TODO(jmesserly): need all standard Set tests.
 
     test('observe length', () {
-      var set = new ObservableSet();
+      var set = new ObservableSet<int>();
       var notification = null;
       observe(() => set.length, (n) { notification = n; });
 

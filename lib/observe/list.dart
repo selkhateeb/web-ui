@@ -6,21 +6,15 @@ library web_ui.observe.list;
 
 import 'dart:collection';
 import 'observable.dart';
-import 'package:web_ui/observe/utils.dart' show Arrays;
+import 'package:web_ui/observe/utils.dart' show Arrays, CollectionBase;
 
-// TODO(jmesserly): this should extend the real list implementation.
-// See http://dartbug.com/2600. The workaround was to copy+paste lots of code
-// from the VM.
 /**
  * Represents an observable list of model values. If any items are added,
  * removed, or replaced, then observers that are registered with
  * [observe] will be notified.
  */
-class ObservableList<E> extends Collection<E> implements List<E>, Observable {
-  // TODO(jmesserly): replace with mixin!
-  final int hashCode = ++Observable.$_nextHashCode;
-  var $_observers;
-  List $_changes;
+class ObservableList<E> extends CollectionBase with Observable
+    implements List<E> {
 
   /** The inner [List<E>] with the actual storage. */
   final List<E> _list;

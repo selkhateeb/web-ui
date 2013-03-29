@@ -25,9 +25,10 @@ BSD-style license that can be found in the LICENSE file.
 
     main() {
       Timer.run(() {
-        var hello = new DivElement();
-        new SayHello.forElement(hello);
-        hello.xtag.name = 'component created in code';
+        var hello = new SayHello()
+          ..host = new DivElement()
+          ..name = 'component created in code';
+
         // "hello" is the DOM node.
         // "hello.xtag" is your SayHello object.
         // We are working on making these be the same object.
@@ -35,9 +36,8 @@ BSD-style license that can be found in the LICENSE file.
         // If the component uses data-binding, we need to make sure the
         // "lifecycle" methods get called. We are working to make this be
         // automatic too.
-        var lifecycleCaller = new ComponentItem(hello.xtag);
-        lifecycleCaller.create();
-        document.body.nodes.add(hello);
+        var lifecycleCaller = new ComponentItem(hello)..create();
+        document.body.nodes.add(hello.host);
         lifecycleCaller.insert();
         window.postMessage('done', '*');
       });

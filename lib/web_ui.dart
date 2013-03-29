@@ -36,34 +36,32 @@ import 'watcher.dart' as watcher;
  */
 abstract class WebComponent implements Element {
   /** The web component element wrapped by this class. */
-  final Element _element;
+  Element _host;
   List _shadowRoots;
 
   /**
-   * Default constructor for web components. This contructor is only provided
-   * for tooling, and is *not* currently supported.
-   * Use [WebComponent.forElement] instead.
+   * Temporary property until components extend [Element]. An element can
+   * only be associated with one host, and it is an error to use a web component
+   * without an associated host element.
    */
-  WebComponent() : _element = null {
-    throw new UnsupportedError(
-        'Directly constructing web components is not currently supported. '
-        'You need to use the WebComponent.forElement constructor to associate '
-        'a component with its DOM element. If you run "bin/dwc.dart" on your '
-        'component, the compiler will create the approriate construction '
-        'logic.');
+  Element get host {
+    if (_host == null) throw new StateError('host element has not been set.');
+    return _host;
   }
 
-  /**
-   * Temporary constructor until components extend [Element]. Attaches this
-   * component to the provided [element]. The element must not already have a
-   * component associated with it.
-   */
-  WebComponent.forElement(Element element) : _element = element {
-    if (element == null || _element.xtag != null) {
-      throw new ArgumentError(
-          'element must be provided and not have its xtag property set');
+  set host(Element value) {
+    if (value == null) {
+      throw new ArgumentError('host must not be null.');
     }
-    _element.xtag = this;
+    if (value.xtag != null) {
+      throw new ArgumentError('host must not have its xtag property set.');
+    }
+    if (_host != null) {
+      throw new StateError('host can only be set once.');
+    }
+
+    value.xtag = this;
+    _host = value;
   }
 
   /**
@@ -74,7 +72,7 @@ abstract class WebComponent implements Element {
    */
   createShadowRoot() {
     if (_realShadowRoot) {
-      return _element.createShadowRoot();
+      return host.createShadowRoot();
     }
     if (_shadowRoots == null) _shadowRoots = [];
     _shadowRoots.add(new DivElement());
@@ -96,18 +94,17 @@ abstract class WebComponent implements Element {
   // TODO(jmesserly): how do we implement this efficiently?
   // See https://github.com/dart-lang/web-ui/issues/37
   /** Invoked when any attribute of the component is modified. */
-  void attributeChanged(
-      String name, String oldValue, String newValue) {}
+  void attributeChanged(String name, String oldValue, String newValue) {}
 
-  get model => _element.model;
+  get model => host.model;
 
   void set model(newModel) {
-    _element.model = newModel;
+    host.model = newModel;
   }
 
-  void clearModel() => _element.clearModel();
+  void clearModel() => host.clearModel();
 
-  Stream<Node> get onModelChanged => _element.onModelChanged;
+  Stream<Node> get onModelChanged => host.onModelChanged;
 
   /**
    * **Note**: This is an implementation helper and should not need to be called
@@ -281,194 +278,194 @@ abstract class WebComponent implements Element {
   // TODO(jmesserly): we were missing the setter for title, are other things
   // missing setters?
 
-  List<Node> get nodes => _element.nodes;
+  List<Node> get nodes => host.nodes;
 
-  set nodes(Collection<Node> value) { _element.nodes = value; }
+  set nodes(Collection<Node> value) { host.nodes = value; }
 
   /**
    * Replaces this node with another node.
    */
-  Node replaceWith(Node otherNode) { _element.replaceWith(otherNode); }
+  Node replaceWith(Node otherNode) { host.replaceWith(otherNode); }
 
   /**
    * Removes this node from the DOM.
    */
-  void remove() => _element.remove();
+  void remove() => host.remove();
 
-  Node get nextNode => _element.nextNode;
+  Node get nextNode => host.nextNode;
 
-  Document get document => _element.document;
+  Document get document => host.document;
 
-  Node get previousNode => _element.previousNode;
+  Node get previousNode => host.previousNode;
 
-  String get text => _element.text;
+  String get text => host.text;
 
-  set text(String v) { _element.text = v; }
+  set text(String v) { host.text = v; }
 
-  bool contains(Node other) => _element.contains(other);
+  bool contains(Node other) => host.contains(other);
 
-  bool hasChildNodes() => _element.hasChildNodes();
+  bool hasChildNodes() => host.hasChildNodes();
 
   Node insertBefore(Node newChild, Node refChild) =>
-    _element.insertBefore(newChild, refChild);
+    host.insertBefore(newChild, refChild);
 
   Node insertAllBefore(Iterable<Node> newChild, Node refChild) =>
-    _element.insertAllBefore(newChild, refChild);
+    host.insertAllBefore(newChild, refChild);
 
-  Map<String, String> get attributes => _element.attributes;
+  Map<String, String> get attributes => host.attributes;
   set attributes(Map<String, String> value) {
-    _element.attributes = value;
+    host.attributes = value;
   }
 
-  List<Element> get elements => _element.children;
+  List<Element> get elements => host.children;
 
   set elements(Collection<Element> value) {
-    _element.children = value;
+    host.children = value;
   }
 
-  List<Element> get children => _element.children;
+  List<Element> get children => host.children;
 
   set children(Collection<Element> value) {
-    _element.children = value;
+    host.children = value;
   }
 
-  Set<String> get classes => _element.classes;
+  Set<String> get classes => host.classes;
 
   set classes(Collection<String> value) {
-    _element.classes = value;
+    host.classes = value;
   }
 
   Map<String, String> getNamespacedAttributes(String namespace) =>
-      _element.getNamespacedAttributes(namespace);
+      host.getNamespacedAttributes(namespace);
 
   CssStyleDeclaration getComputedStyle([String pseudoElement])
-    => _element.getComputedStyle(pseudoElement);
+    => host.getComputedStyle(pseudoElement);
 
-  Element clone(bool deep) => _element.clone(deep);
+  Element clone(bool deep) => host.clone(deep);
 
-  Element get parent => _element.parent;
+  Element get parent => host.parent;
 
-  Node get parentNode => _element.parentNode;
+  Node get parentNode => host.parentNode;
 
-  String get nodeValue => _element.nodeValue;
+  String get nodeValue => host.nodeValue;
 
   @deprecated
-  // TODO(sigmund): restore the old return type and call _element.on when
+  // TODO(sigmund): restore the old return type and call host.on when
   // dartbug.com/8131 is fixed.
   dynamic get on { throw new UnsupportedError('on is deprecated'); }
 
-  String get contentEditable => _element.contentEditable;
+  String get contentEditable => host.contentEditable;
 
-  String get dir => _element.dir;
+  String get dir => host.dir;
 
-  bool get draggable => _element.draggable;
+  bool get draggable => host.draggable;
 
-  bool get hidden => _element.hidden;
+  bool get hidden => host.hidden;
 
-  String get id => _element.id;
+  String get id => host.id;
 
-  String get innerHTML => _element.innerHtml;
+  String get innerHTML => host.innerHtml;
 
   void set innerHTML(String v) {
-    _element.innerHtml = v;
+    host.innerHtml = v;
   }
 
-  String get innerHtml => _element.innerHtml;
+  String get innerHtml => host.innerHtml;
   void set innerHtml(String v) {
-    _element.innerHtml = v;
+    host.innerHtml = v;
   }
 
-  bool get isContentEditable => _element.isContentEditable;
+  bool get isContentEditable => host.isContentEditable;
 
-  String get lang => _element.lang;
+  String get lang => host.lang;
 
-  String get outerHtml => _element.outerHtml;
+  String get outerHtml => host.outerHtml;
 
-  bool get spellcheck => _element.spellcheck;
+  bool get spellcheck => host.spellcheck;
 
-  int get tabIndex => _element.tabIndex;
+  int get tabIndex => host.tabIndex;
 
-  String get title => _element.title;
+  String get title => host.title;
 
-  set title(String value) { _element.title = value; }
+  set title(String value) { host.title = value; }
 
-  bool get translate => _element.translate;
+  bool get translate => host.translate;
 
-  String get dropzone => _element.dropzone;
+  String get dropzone => host.dropzone;
 
-  void click() { _element.click(); }
+  void click() { host.click(); }
 
   Element insertAdjacentElement(String where, Element element) =>
-    _element.insertAdjacentElement(where, element);
+    host.insertAdjacentElement(where, element);
 
   void insertAdjacentHtml(String where, String html) {
-    _element.insertAdjacentHtml(where, html);
+    host.insertAdjacentHtml(where, html);
   }
 
   void insertAdjacentText(String where, String text) {
-    _element.insertAdjacentText(where, text);
+    host.insertAdjacentText(where, text);
   }
 
-  Map<String, String> get dataset => _element.dataset;
+  Map<String, String> get dataset => host.dataset;
 
   set dataset(Map<String, String> value) {
-    _element.dataset = value;
+    host.dataset = value;
   }
 
-  Element get nextElementSibling => _element.nextElementSibling;
+  Element get nextElementSibling => host.nextElementSibling;
 
-  Element get offsetParent => _element.offsetParent;
+  Element get offsetParent => host.offsetParent;
 
-  Element get previousElementSibling => _element.previousElementSibling;
+  Element get previousElementSibling => host.previousElementSibling;
 
-  CssStyleDeclaration get style => _element.style;
+  CssStyleDeclaration get style => host.style;
 
-  String get tagName => _element.tagName;
+  String get tagName => host.tagName;
 
-  String get pseudo => _element.pseudo;
+  String get pseudo => host.pseudo;
 
   void set pseudo(String value) {
-    _element.pseudo = value;
+    host.pseudo = value;
   }
 
-  ShadowRoot get shadowRoot => _element.shadowRoot;
+  ShadowRoot get shadowRoot => host.shadowRoot;
 
-  void blur() { _element.blur(); }
+  void blur() { host.blur(); }
 
-  void focus() { _element.focus(); }
+  void focus() { host.focus(); }
 
   void scrollByLines(int lines) {
-    _element.scrollByLines(lines);
+    host.scrollByLines(lines);
   }
 
   void scrollByPages(int pages) {
-    _element.scrollByPages(pages);
+    host.scrollByPages(pages);
   }
 
   void scrollIntoView([ScrollAlignment alignment]) {
-    _element.scrollIntoView(alignment);
+    host.scrollIntoView(alignment);
   }
 
-  bool matches(String selectors) => _element.matches(selectors);
+  bool matches(String selectors) => host.matches(selectors);
 
   void requestFullScreen(int flags) {
-    _element.requestFullScreen(flags);
+    host.requestFullScreen(flags);
   }
 
-  void requestFullscreen() { _element.requestFullscreen(); }
+  void requestFullscreen() { host.requestFullscreen(); }
 
-  void requestPointerLock() { _element.requestPointerLock(); }
+  void requestPointerLock() { host.requestPointerLock(); }
 
-  Element query(String selectors) => _element.query(selectors);
+  Element query(String selectors) => host.query(selectors);
 
-  List<Element> queryAll(String selectors) => _element.queryAll(selectors);
+  List<Element> queryAll(String selectors) => host.queryAll(selectors);
 
-  HtmlCollection get $dom_children => _element.$dom_children;
+  HtmlCollection get $dom_children => host.$dom_children;
 
-  int get $dom_childElementCount => _element.$dom_childElementCount;
+  int get $dom_childElementCount => host.$dom_childElementCount;
 
-  String get $dom_className => _element.$dom_className;
-  set $dom_className(String value) { _element.$dom_className = value; }
+  String get $dom_className => host.$dom_className;
+  set $dom_className(String value) { host.$dom_className = value; }
 
   @deprecated
   int get clientHeight => client.height;
@@ -482,11 +479,11 @@ abstract class WebComponent implements Element {
   @deprecated
   int get clientWidth => client.width;
 
-  Rect get client => _element.client;
+  Rect get client => host.client;
 
-  Element get $dom_firstElementChild => _element.$dom_firstElementChild;
+  Element get $dom_firstElementChild => host.$dom_firstElementChild;
 
-  Element get $dom_lastElementChild => _element.$dom_lastElementChild;
+  Element get $dom_lastElementChild => host.$dom_lastElementChild;
 
   @deprecated
   int get offsetHeight => offset.height;
@@ -500,166 +497,166 @@ abstract class WebComponent implements Element {
   @deprecated
   int get offsetWidth => offset.width;
 
-  Rect get offset => _element.offset;
+  Rect get offset => host.offset;
 
-  int get scrollHeight => _element.scrollHeight;
+  int get scrollHeight => host.scrollHeight;
 
-  int get scrollLeft => _element.scrollLeft;
+  int get scrollLeft => host.scrollLeft;
 
-  int get scrollTop => _element.scrollTop;
+  int get scrollTop => host.scrollTop;
 
-  set scrollLeft(int value) { _element.scrollLeft = value; }
+  set scrollLeft(int value) { host.scrollLeft = value; }
 
-  set scrollTop(int value) { _element.scrollTop = value; }
+  set scrollTop(int value) { host.scrollTop = value; }
 
-  int get scrollWidth => _element.scrollWidth;
+  int get scrollWidth => host.scrollWidth;
 
   String $dom_getAttribute(String name) =>
-      _element.$dom_getAttribute(name);
+      host.$dom_getAttribute(name);
 
   String $dom_getAttributeNS(String namespaceUri, String localName) =>
-      _element.$dom_getAttributeNS(namespaceUri, localName);
+      host.$dom_getAttributeNS(namespaceUri, localName);
 
   String $dom_setAttributeNS(
       String namespaceUri, String localName, String value) {
-    _element.$dom_setAttributeNS(namespaceUri, localName, value);
+    host.$dom_setAttributeNS(namespaceUri, localName, value);
   }
 
   bool $dom_hasAttributeNS(String namespaceUri, String localName) =>
-      _element.$dom_hasAttributeNS(namespaceUri, localName);
+      host.$dom_hasAttributeNS(namespaceUri, localName);
 
   void $dom_removeAttributeNS(String namespaceUri, String localName) =>
-      _element.$dom_removeAttributeNS(namespaceUri, localName);
+      host.$dom_removeAttributeNS(namespaceUri, localName);
 
-  Rect getBoundingClientRect() => _element.getBoundingClientRect();
+  Rect getBoundingClientRect() => host.getBoundingClientRect();
 
-  List<Rect> getClientRects() => _element.getClientRects();
+  List<Rect> getClientRects() => host.getClientRects();
 
   List<Node> getElementsByClassName(String name) =>
-      _element.getElementsByClassName(name);
+      host.getElementsByClassName(name);
 
   List<Node> $dom_getElementsByTagName(String name) =>
-      _element.$dom_getElementsByTagName(name);
+      host.$dom_getElementsByTagName(name);
 
   bool $dom_hasAttribute(String name) =>
-      _element.$dom_hasAttribute(name);
+      host.$dom_hasAttribute(name);
 
   List<Node> $dom_querySelectorAll(String selectors) =>
-      _element.$dom_querySelectorAll(selectors);
+      host.$dom_querySelectorAll(selectors);
 
   void $dom_removeAttribute(String name) =>
-      _element.$dom_removeAttribute(name);
+      host.$dom_removeAttribute(name);
 
   void $dom_setAttribute(String name, String value) =>
-      _element.$dom_setAttribute(name, value);
+      host.$dom_setAttribute(name, value);
 
-  get $dom_attributes => _element.$dom_attributes;
+  get $dom_attributes => host.$dom_attributes;
 
-  List<Node> get $dom_childNodes => _element.$dom_childNodes;
+  List<Node> get $dom_childNodes => host.$dom_childNodes;
 
-  Node get $dom_firstChild => _element.$dom_firstChild;
+  Node get $dom_firstChild => host.$dom_firstChild;
 
-  Node get $dom_lastChild => _element.$dom_lastChild;
+  Node get $dom_lastChild => host.$dom_lastChild;
 
-  String get $dom_localName => _element.$dom_localName;
+  String get $dom_localName => host.$dom_localName;
 
-  String get $dom_namespaceUri => _element.$dom_namespaceUri;
+  String get $dom_namespaceUri => host.$dom_namespaceUri;
 
-  int get nodeType => _element.nodeType;
+  int get nodeType => host.nodeType;
 
   void $dom_addEventListener(String type, EventListener listener,
                              [bool useCapture]) {
-    _element.$dom_addEventListener(type, listener, useCapture);
+    host.$dom_addEventListener(type, listener, useCapture);
   }
 
-  bool dispatchEvent(Event event) => _element.dispatchEvent(event);
+  bool dispatchEvent(Event event) => host.dispatchEvent(event);
 
-  Node $dom_removeChild(Node oldChild) => _element.$dom_removeChild(oldChild);
+  Node $dom_removeChild(Node oldChild) => host.$dom_removeChild(oldChild);
 
   void $dom_removeEventListener(String type, EventListener listener,
                                 [bool useCapture]) {
-    _element.$dom_removeEventListener(type, listener, useCapture);
+    host.$dom_removeEventListener(type, listener, useCapture);
   }
 
   Node $dom_replaceChild(Node newChild, Node oldChild) =>
-      _element.$dom_replaceChild(newChild, oldChild);
+      host.$dom_replaceChild(newChild, oldChild);
 
-  get xtag => _element.xtag;
+  get xtag => host.xtag;
 
-  set xtag(value) { _element.xtag = value; }
+  set xtag(value) { host.xtag = value; }
 
-  Node append(Node e) => _element.append(e);
+  Node append(Node e) => host.append(e);
 
-  void appendText(String text) => _element.appendText(text);
+  void appendText(String text) => host.appendText(text);
 
-  void appendHtml(String html) => _element.appendHtml(html);
+  void appendHtml(String html) => host.appendHtml(html);
 
   void $dom_scrollIntoView([bool alignWithTop]) {
     if (alignWithTop == null) {
-      _element.$dom_scrollIntoView();
+      host.$dom_scrollIntoView();
     } else {
-      _element.$dom_scrollIntoView(alignWithTop);
+      host.$dom_scrollIntoView(alignWithTop);
     }
   }
 
   void $dom_scrollIntoViewIfNeeded([bool centerIfNeeded]) {
     if (centerIfNeeded == null) {
-      _element.$dom_scrollIntoViewIfNeeded();
+      host.$dom_scrollIntoViewIfNeeded();
     } else {
-      _element.$dom_scrollIntoViewIfNeeded(centerIfNeeded);
+      host.$dom_scrollIntoViewIfNeeded(centerIfNeeded);
     }
   }
 
   // TODO(jmesserly): rename "created" to "onCreated".
   void onCreated() => created();
 
-  Stream<Event> get onAbort => _element.onAbort;
-  Stream<Event> get onBeforeCopy => _element.onBeforeCopy;
-  Stream<Event> get onBeforeCut => _element.onBeforeCut;
-  Stream<Event> get onBeforePaste => _element.onBeforePaste;
-  Stream<Event> get onBlur => _element.onBlur;
-  Stream<Event> get onChange => _element.onChange;
-  Stream<MouseEvent> get onClick => _element.onClick;
-  Stream<MouseEvent> get onContextMenu => _element.onContextMenu;
-  Stream<Event> get onCopy => _element.onCopy;
-  Stream<Event> get onCut => _element.onCut;
-  Stream<Event> get onDoubleClick => _element.onDoubleClick;
-  Stream<MouseEvent> get onDrag => _element.onDrag;
-  Stream<MouseEvent> get onDragEnd => _element.onDragEnd;
-  Stream<MouseEvent> get onDragEnter => _element.onDragEnter;
-  Stream<MouseEvent> get onDragLeave => _element.onDragLeave;
-  Stream<MouseEvent> get onDragOver => _element.onDragOver;
-  Stream<MouseEvent> get onDragStart => _element.onDragStart;
-  Stream<MouseEvent> get onDrop => _element.onDrop;
-  Stream<Event> get onError => _element.onError;
-  Stream<Event> get onFocus => _element.onFocus;
-  Stream<Event> get onInput => _element.onInput;
-  Stream<Event> get onInvalid => _element.onInvalid;
-  Stream<KeyboardEvent> get onKeyDown => _element.onKeyDown;
-  Stream<KeyboardEvent> get onKeyPress => _element.onKeyPress;
-  Stream<KeyboardEvent> get onKeyUp => _element.onKeyUp;
-  Stream<Event> get onLoad => _element.onLoad;
-  Stream<MouseEvent> get onMouseDown => _element.onMouseDown;
-  Stream<MouseEvent> get onMouseMove => _element.onMouseMove;
-  Stream<Event> get onFullscreenChange => _element.onFullscreenChange;
-  Stream<Event> get onFullscreenError => _element.onFullscreenError;
-  Stream<Event> get onPaste => _element.onPaste;
-  Stream<Event> get onReset => _element.onReset;
-  Stream<Event> get onScroll => _element.onScroll;
-  Stream<Event> get onSearch => _element.onSearch;
-  Stream<Event> get onSelect => _element.onSelect;
-  Stream<Event> get onSelectStart => _element.onSelectStart;
-  Stream<Event> get onSubmit => _element.onSubmit;
-  Stream<MouseEvent> get onMouseOut => _element.onMouseOut;
-  Stream<MouseEvent> get onMouseOver => _element.onMouseOver;
-  Stream<MouseEvent> get onMouseUp => _element.onMouseUp;
-  Stream<TouchEvent> get onTouchCancel => _element.onTouchCancel;
-  Stream<TouchEvent> get onTouchEnd => _element.onTouchEnd;
-  Stream<TouchEvent> get onTouchEnter => _element.onTouchEnter;
-  Stream<TouchEvent> get onTouchLeave => _element.onTouchLeave;
-  Stream<TouchEvent> get onTouchMove => _element.onTouchMove;
-  Stream<TouchEvent> get onTouchStart => _element.onTouchStart;
-  Stream<TransitionEvent> get onTransitionEnd => _element.onTransitionEnd;
+  Stream<Event> get onAbort => host.onAbort;
+  Stream<Event> get onBeforeCopy => host.onBeforeCopy;
+  Stream<Event> get onBeforeCut => host.onBeforeCut;
+  Stream<Event> get onBeforePaste => host.onBeforePaste;
+  Stream<Event> get onBlur => host.onBlur;
+  Stream<Event> get onChange => host.onChange;
+  Stream<MouseEvent> get onClick => host.onClick;
+  Stream<MouseEvent> get onContextMenu => host.onContextMenu;
+  Stream<Event> get onCopy => host.onCopy;
+  Stream<Event> get onCut => host.onCut;
+  Stream<Event> get onDoubleClick => host.onDoubleClick;
+  Stream<MouseEvent> get onDrag => host.onDrag;
+  Stream<MouseEvent> get onDragEnd => host.onDragEnd;
+  Stream<MouseEvent> get onDragEnter => host.onDragEnter;
+  Stream<MouseEvent> get onDragLeave => host.onDragLeave;
+  Stream<MouseEvent> get onDragOver => host.onDragOver;
+  Stream<MouseEvent> get onDragStart => host.onDragStart;
+  Stream<MouseEvent> get onDrop => host.onDrop;
+  Stream<Event> get onError => host.onError;
+  Stream<Event> get onFocus => host.onFocus;
+  Stream<Event> get onInput => host.onInput;
+  Stream<Event> get onInvalid => host.onInvalid;
+  Stream<KeyboardEvent> get onKeyDown => host.onKeyDown;
+  Stream<KeyboardEvent> get onKeyPress => host.onKeyPress;
+  Stream<KeyboardEvent> get onKeyUp => host.onKeyUp;
+  Stream<Event> get onLoad => host.onLoad;
+  Stream<MouseEvent> get onMouseDown => host.onMouseDown;
+  Stream<MouseEvent> get onMouseMove => host.onMouseMove;
+  Stream<Event> get onFullscreenChange => host.onFullscreenChange;
+  Stream<Event> get onFullscreenError => host.onFullscreenError;
+  Stream<Event> get onPaste => host.onPaste;
+  Stream<Event> get onReset => host.onReset;
+  Stream<Event> get onScroll => host.onScroll;
+  Stream<Event> get onSearch => host.onSearch;
+  Stream<Event> get onSelect => host.onSelect;
+  Stream<Event> get onSelectStart => host.onSelectStart;
+  Stream<Event> get onSubmit => host.onSubmit;
+  Stream<MouseEvent> get onMouseOut => host.onMouseOut;
+  Stream<MouseEvent> get onMouseOver => host.onMouseOver;
+  Stream<MouseEvent> get onMouseUp => host.onMouseUp;
+  Stream<TouchEvent> get onTouchCancel => host.onTouchCancel;
+  Stream<TouchEvent> get onTouchEnd => host.onTouchEnd;
+  Stream<TouchEvent> get onTouchEnter => host.onTouchEnter;
+  Stream<TouchEvent> get onTouchLeave => host.onTouchLeave;
+  Stream<TouchEvent> get onTouchMove => host.onTouchMove;
+  Stream<TouchEvent> get onTouchStart => host.onTouchStart;
+  Stream<TransitionEvent> get onTransitionEnd => host.onTransitionEnd;
 
   // TODO(sigmund): do the normal forwarding when dartbug.com/7919 is fixed.
   Stream<WheelEvent> get onMouseWheel {
