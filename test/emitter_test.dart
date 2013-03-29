@@ -182,7 +182,8 @@ main() {
       expect(_created(elem), equalsIgnoringWhitespace(
           r"__e0 = _root.query('#__e-0'); "
           r'__t.listen(__e0.onInput, ($event) { bar = __e0.value; }); '
-          '__t.oneWayBind(() => bar, (e) { __e0.value = e; }, false, false);'));
+          '__t.oneWayBind(() => bar, (e) { '
+              'if (__e0.value != e) __e0.value = e; }, false, false);'));
     });
   });
 
@@ -192,14 +193,16 @@ main() {
       expect(_created(elem), equalsIgnoringWhitespace(
           r"__e0 = _root.query('#__e-0'); "
           "__t.oneWayBind(() => bar, (e) { "
-              "__e0.attributes['foo'] = e; }, false, false);"));
+              "if (__e0.attributes['foo'] != e) __e0.attributes['foo'] = e; },"
+              " false, false);"));
     });
 
     test('created for 1-way binding with dom accessor', () {
       var elem = parseSubtree('<input value="{{bar}}">');
       expect(_created(elem), equalsIgnoringWhitespace(
           r"__e0 = _root.query('#__e-0'); "
-          "__t.oneWayBind(() => bar, (e) { __e0.value = e; }, false, false);"));
+          "__t.oneWayBind(() => bar, (e) { "
+              "if (__e0.value != e) __e0.value = e; }, false, false);"));
     });
 
     test('created for 2-way binding with dom accessor', () {
@@ -207,7 +210,8 @@ main() {
       expect(_created(elem), equalsIgnoringWhitespace(
           r"__e0 = _root.query('#__e-0'); "
           r'__t.listen(__e0.onInput, ($event) { bar = __e0.value; }); '
-          '__t.oneWayBind(() => bar, (e) { __e0.value = e; }, false, false);'));
+          '__t.oneWayBind(() => bar, (e) { '
+              'if (__e0.value != e) __e0.value = e; }, false, false);'));
     });
 
     test('created for data attribute', () {
@@ -215,7 +219,8 @@ main() {
       expect(_created(elem), equalsIgnoringWhitespace(
           r"__e0 = _root.query('#__e-0'); "
           "__t.oneWayBind(() => bar, (e) { "
-          "__e0.attributes['data-foo'] = e; }, false, false);"));
+              "if (__e0.attributes['data-foo'] != e) "
+              "__e0.attributes['data-foo'] = e; }, false, false);"));
     });
 
     test('created for class', () {
@@ -239,6 +244,7 @@ main() {
         expect(_created(elem), equalsIgnoringWhitespace(
             r"__e0 = _root.query('#__e-0'); "
             "__t.oneWayBind(() => bar, (e) { "
+                "if (__e0.attributes['foo'] != e) "
                 "__e0.attributes['foo'] = e; }, true, false);"));
       });
 
@@ -246,8 +252,8 @@ main() {
         var elem = parseSubtree('<input value="{{bar | final}}">');
         expect(_created(elem), equalsIgnoringWhitespace(
             r"__e0 = _root.query('#__e-0'); "
-            r"__t.oneWayBind(() => bar, "
-            r"(e) { __e0.value = e; }, true, false);"));
+            r'__t.oneWayBind(() => bar, (e) { '
+            r'if (__e0.value != e) __e0.value = e; }, true, false); '));
       });
 
       test('created for 2-way binding with dom accessor', () {
@@ -255,8 +261,8 @@ main() {
         expect(_created(elem), equalsIgnoringWhitespace(
             r"__e0 = _root.query('#__e-0'); "
             r'__t.listen(__e0.onInput, ($event) { bar = __e0.value; }); '
-            r'__t.oneWayBind(() => bar, '
-            r'(e) { __e0.value = e; }, true, false); '));
+            r'__t.oneWayBind(() => bar, (e) { '
+            r'if (__e0.value != e) __e0.value = e; }, true, false); '));
       });
 
       test('created for data attribute', () {
@@ -264,7 +270,8 @@ main() {
         expect(_created(elem), equalsIgnoringWhitespace(
             r"__e0 = _root.query('#__e-0'); "
             "__t.oneWayBind(() => bar, (e) { "
-            "__e0.attributes['data-foo'] = e; }, true, false);"));
+                "if (__e0.attributes['data-foo'] != e) "
+                "__e0.attributes['data-foo'] = e; }, true, false);"));
       });
 
       test('created for class', () {

@@ -168,12 +168,13 @@ void _emitStyleAttributeBinding(
 
 void _emitSimpleAttributeBinding(ElementInfo info,
     String name, AttributeInfo attr, CodePrinter printer) {
+  var node = info.identifier;
   var binding = attr.boundValue;
   var isFinal = attr.isBindingFinal;
   var field = _findDomField(info, name);
   var isUrl = urlAttributes.contains(name);
   printer.addLine('__t.oneWayBind(() => $binding, '
-        '(e) { ${info.identifier}.$field = e; }, $isFinal, $isUrl);',
+        '(e) { if ($node.$field != e) $node.$field = e; }, $isFinal, $isUrl);',
       span: info.node.sourceSpan);
   if (attr.customTwoWayBinding) {
     printer.addLine('__t.oneWayBind(() => ${info.identifier}.$field, '
