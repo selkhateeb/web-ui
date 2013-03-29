@@ -610,7 +610,8 @@ main() {
         '</head>'
         '<body><link rel="components" href="quuux.html">'
       ));
-      expect(info.componentLinks, equals(['foo.html', 'quux.html']));
+      expect(info.componentLinks.map((l) => l.resolvedPath),
+          equals(['foo.html', 'quux.html']));
     });
 
     test('package links are resolved against package root', () {
@@ -621,7 +622,7 @@ main() {
         '</head>'
         '<body><link rel="components" href="quuux.html">'
       ), packageRoot: '/my/packages');
-      expect(info.componentLinks, equals([
+      expect(info.componentLinks.map((l) => l.resolvedPath), equals([
           '/my/packages/foo/foo.html',
           '/my/packages/quux/quux.html']));
     });
@@ -1014,7 +1015,7 @@ main() {
 
       var fileInfo = analyzeFiles(files);
       var info = fileInfo['a/b.html'];
-      expect(info.styleSheetHref,
+      expect(info.styleSheetHref.map((l) => l.resolvedPath),
           ['a/c.css', 'a/d/e.css', '/f.css', 'packages/p.css']);
     });
   });

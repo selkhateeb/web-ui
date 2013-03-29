@@ -168,7 +168,7 @@ class _Analyzer extends TreeVisitor {
         _messages.warning(
             "Invalid value for 'indentation' ($value). By default we preserve "
             "the indentation. Valid values are either 'remove' or 'preserve'.",
-            node.sourceSpan, file: _fileInfo.inputPath);
+            node.sourceSpan);
       }
       _keepIndentationSpaces = value != 'remove';
     }
@@ -226,7 +226,7 @@ class _Analyzer extends TreeVisitor {
         isCustomTag(component.extendsTag)) {
       _messages.warning(
           'custom element with tag name ${component.extendsTag} not found.',
-          component.element.sourceSpan, file: _fileInfo.inputPath);
+          component.element.sourceSpan);
     }
 
     // Now that the component's code has been loaded, we can validate that the
@@ -250,7 +250,7 @@ class _Analyzer extends TreeVisitor {
       if (component == null && componentName != null) {
         _messages.warning(
             'custom element with tag name $componentName not found.',
-            node.sourceSpan, file: _fileInfo.inputPath);
+            node.sourceSpan);
       }
     }
 
@@ -265,7 +265,7 @@ class _Analyzer extends TreeVisitor {
         !node.attributes.containsKey('template')) {
       _messages.warning('template attribute is required when using if, '
           'instantiate, or iterate attributes.',
-          node.sourceSpan, file: _fileInfo.inputPath);
+          node.sourceSpan);
     }
 
     var instantiate = node.attributes['instantiate'];
@@ -275,7 +275,7 @@ class _Analyzer extends TreeVisitor {
         if (condition != null) {
           _messages.warning(
               'another condition was already defined on this element.',
-              node.sourceSpan, file: _fileInfo.inputPath);
+              node.sourceSpan);
         } else {
           condition = instantiate.substring(3);
         }
@@ -287,7 +287,7 @@ class _Analyzer extends TreeVisitor {
     // Dart is to be forgiving.
     if (condition != null && iterate != null) {
       _messages.warning('template cannot have both iteration and conditional '
-          'attributes', node.sourceSpan, file: _fileInfo.inputPath);
+          'attributes', node.sourceSpan);
       return null;
     }
 
@@ -305,7 +305,7 @@ class _Analyzer extends TreeVisitor {
           '"if" or "iterate". However, you can create another template node '
           'that is a child node, for example:\n'
           '${example.outerHtml}',
-          node.parent.sourceSpan, file: _fileInfo.inputPath);
+          node.parent.sourceSpan);
       return null;
     }
 
@@ -348,7 +348,7 @@ class _Analyzer extends TreeVisitor {
       _messages.warning('template iterate must be of the form: '
           'iterate="variable in list", where "variable" is your variable name '
           'and "list" is the list of items.',
-          node.sourceSpan, file: _fileInfo.inputPath);
+          node.sourceSpan);
     }
     return null;
   }
@@ -377,7 +377,7 @@ class _Analyzer extends TreeVisitor {
             'Sorry, bindings in "id" attributes are not yet supported. '
             'These bindings will be ignored. See '
             'https://github.com/dart-lang/web-ui/issues/284 for more details.',
-            info.node.sourceSpan, file: _fileInfo.inputPath);
+            info.node.sourceSpan);
         return;
       }
     } else {
@@ -401,7 +401,7 @@ class _Analyzer extends TreeVisitor {
           'JavaScript event handler. Use the form '
           'on-event-name="handlerName(\$event)" if you want a Dart handler '
           'that will automatically update the UI based on model changes.',
-          info.node.sourceSpan, file: _fileInfo.inputPath);
+          info.node.sourceSpan);
       return;
     }
 
@@ -436,8 +436,7 @@ class _Analyzer extends TreeVisitor {
         if (!_isValidRadioButton(info)) return false;
       } else if (inputType != 'checkbox') {
         _messages.error('checked is only supported in HTML with type="radio" '
-            'or type="checked".', info.node.sourceSpan,
-            file: _fileInfo.inputPath);
+            'or type="checked".', info.node.sourceSpan);
         return false;
       }
 
@@ -467,7 +466,7 @@ class _Analyzer extends TreeVisitor {
 
     } else {
       _messages.error('Unknown two-way binding attribute $name. Ignored.',
-          info.node.sourceSpan, file: _fileInfo.inputPath);
+          info.node.sourceSpan);
       return false;
     }
 
@@ -483,7 +482,7 @@ class _Analyzer extends TreeVisitor {
     if (info.node.attributes[name] != null) {
       _messages.warning('Duplicate attribute $name. You should provide either '
           'the two-way binding or the attribute itself. The attribute will be '
-          'ignored.', info.node.sourceSpan, file: _fileInfo.inputPath);
+          'ignored.', info.node.sourceSpan);
       info.removeAttributes.add(name);
     }
   }
@@ -496,7 +495,7 @@ class _Analyzer extends TreeVisitor {
         '  <input type="radio" bind-checked="myBooleanVar">\n'
         'or value:\n'
         '  <input type="radio" bind-value="myStringVar" value="theValue">',
-        info.node.sourceSpan, file: _fileInfo.inputPath);
+        info.node.sourceSpan);
     return false;
   }
 
@@ -514,7 +513,7 @@ class _Analyzer extends TreeVisitor {
       _messages.error('Radio button bindings need "bind-value" and "value".'
           'For example: '
           '<input type="radio" bind-value="myStringVar" value="theValue">',
-          info.node.sourceSpan, file: _fileInfo.inputPath);
+          info.node.sourceSpan);
       return false;
     }
 
@@ -656,7 +655,7 @@ class _Analyzer extends TreeVisitor {
     }
 
     for (var link in info.componentLinks) {
-      var file = files[link];
+      var file = files[link.resolvedPath];
       // We already issued an error for missing files.
       if (file == null) continue;
       file.declaredComponents.forEach((c) => _addComponent(info, c));
@@ -668,9 +667,9 @@ class _Analyzer extends TreeVisitor {
    * in a script tag with the 'src' attribute.
    */
   void _attachExtenalScript(LibraryInfo info, Map<String, FileInfo> files) {
-    var filePath = info.externalFile;
-    if (filePath != null) {
-      info.externalCode = files[filePath];
+    var externalFile = info.externalFile;
+    if (externalFile != null) {
+      info.externalCode = files[externalFile.resolvedPath];
       if (info.externalCode != null) info.externalCode.htmlFile = info;
     }
   }
@@ -759,14 +758,14 @@ class _ElementLoader extends TreeVisitor {
 
     if (!_inHead) {
       _messages.warning('link rel="$rel" only valid in '
-          'head.', node.sourceSpan, file: _fileInfo.inputPath);
+          'head.', node.sourceSpan);
       return;
     }
 
     var href = node.attributes['href'];
     if (href == null || href == '') {
       _messages.warning('link rel="$rel" missing href.',
-          node.sourceSpan, file: _fileInfo.inputPath);
+          node.sourceSpan);
       return;
     }
 
@@ -787,9 +786,9 @@ class _ElementLoader extends TreeVisitor {
     hrefTarget = path.normalize(hrefTarget);
 
     if (rel == 'stylesheet') {
-      _fileInfo.styleSheetHref.add(hrefTarget);
+      _fileInfo.styleSheetHref.add(new UrlInfo(hrefTarget, node.sourceSpan));
     } else {
-      _fileInfo.componentLinks.add(hrefTarget);
+      _fileInfo.componentLinks.add(new UrlInfo(hrefTarget, node.sourceSpan));
     }
   }
 
@@ -799,7 +798,7 @@ class _ElementLoader extends TreeVisitor {
     // visible from the outside.
     if (_currentInfo is ComponentInfo) {
       _messages.error('Nested component definitions are not yet supported.',
-          node.sourceSpan, file: _fileInfo.inputPath);
+          node.sourceSpan);
       return;
     }
 
@@ -810,7 +809,7 @@ class _ElementLoader extends TreeVisitor {
     if (tagName == null) {
       _messages.error('Missing tag name of the component. Please include an '
           'attribute like \'name="your-tag-name"\'.',
-          node.sourceSpan, file: _fileInfo.inputPath);
+          node.sourceSpan);
       return;
     }
 
@@ -827,7 +826,7 @@ class _ElementLoader extends TreeVisitor {
       template = templateNodes.single;
     } else {
       _messages.warning('an <element> should have exactly one <template> child',
-          node.sourceSpan, file: _fileInfo.inputPath);
+          node.sourceSpan);
     }
 
     var component = new ComponentInfo(node, _fileInfo, tagName, extendsTag,
@@ -859,12 +858,12 @@ class _ElementLoader extends TreeVisitor {
       if (src == null && _currentInfo is ComponentInfo) {
         _messages.warning('script tag in component with no type will '
             'be treated as JavaScript. Did you forget type="application/dart"?',
-            node.sourceSpan, file: _fileInfo.inputPath);
+            node.sourceSpan);
       }
       if (src != null && src.endsWith('.dart')) {
         _messages.warning('script tag with .dart source file but no type will '
             'be treated as JavaScript. Did you forget type="application/dart"?',
-            node.sourceSpan, file: _fileInfo.inputPath);
+            node.sourceSpan);
       }
       return;
     }
@@ -878,7 +877,7 @@ class _ElementLoader extends TreeVisitor {
         _messages.warning('our custom element implementation does not support '
             'JavaScript components yet. If this is affecting you please let us '
             'know at https://github.com/dart-lang/web-ui/issues/340.',
-            node.sourceSpan, file: _fileInfo.inputPath);
+            node.sourceSpan);
       }
 
       return;
@@ -888,12 +887,12 @@ class _ElementLoader extends TreeVisitor {
       if (!src.endsWith('.dart')) {
         _messages.warning('"application/dart" scripts should '
             'use the .dart file extension.',
-            node.sourceSpan, file: _fileInfo.inputPath);
+            node.sourceSpan);
       }
 
       if (node.innerHtml.trim() != '') {
         _messages.error('script tag has "src" attribute and also has script '
-            'text.', node.sourceSpan, file: _fileInfo.inputPath);
+            'text.', node.sourceSpan);
       }
 
       if (_currentInfo.codeAttached) {
@@ -902,10 +901,11 @@ class _ElementLoader extends TreeVisitor {
         if (path.isAbsolute(src)) {
           _messages.error(
               'script tag should not use absolute path in attribute "src". '
-              'Got "src"="$src".', node.sourceSpan, file: _fileInfo.inputPath);
+              'Got "src"="$src".', node.sourceSpan);
         } else {
-          _currentInfo.externalFile = path.normalize(
-              path.join(path.dirname(_fileInfo.inputPath), src));
+          _currentInfo.externalFile = new UrlInfo(
+              path.normalize(path.join(path.dirname(_fileInfo.inputPath), src)),
+              node.sourceSpan);
         }
       }
       return;
@@ -923,14 +923,14 @@ class _ElementLoader extends TreeVisitor {
     } else if (_currentInfo == _fileInfo && !_fileInfo.isEntryPoint) {
       _messages.warning('top-level dart code is ignored on '
           ' HTML pages that define components, but are not the entry HTML '
-          'file.', node.sourceSpan, file: _fileInfo.inputPath);
+          'file.', node.sourceSpan);
     } else {
       _currentInfo.inlinedCode = parseDartCode(
           _currentInfo.dartCodePath, text.value, _messages,
           text.sourceSpan.start);
       if (_currentInfo.userCode.partOf != null) {
         _messages.error('expected a library, not a part.',
-            node.sourceSpan, file: _fileInfo.inputPath);
+            node.sourceSpan);
       }
     }
   }
@@ -940,7 +940,7 @@ class _ElementLoader extends TreeVisitor {
         'a custom element declaration' : 'the top-level HTML page';
 
     _messages.error('there should be only one dart script tag in $location.',
-        node.sourceSpan, file: _fileInfo.inputPath);
+        node.sourceSpan);
   }
 }
 

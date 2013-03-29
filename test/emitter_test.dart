@@ -362,7 +362,7 @@ main() {
       fileInfo.inlinedCode = new DartCodeInfo('main', null, [], '', null);
       // Issue #207 happened because we used to mistakenly take the path of
       // the external file when transforming the urls in the html file.
-      fileInfo.externalFile = 'dir/a.dart';
+      fileInfo.externalFile = new UrlInfo('dir/a.dart', null);
       var paths = _newPathMapper('', 'out', true);
       transformMainHtml(doc, fileInfo, paths, false, true, messages);
       var emitter = new EntryPointEmitter(fileInfo);
@@ -385,7 +385,7 @@ main() {
       var doc = parseDocument(html);
       var fileInfo = analyzeNodeForTesting(doc, messages, filepath: 'a.html');
       fileInfo.inlinedCode = new DartCodeInfo('main', null, [], '', null);
-      fileInfo.externalFile = 'dir/a.dart';
+      fileInfo.externalFile = new UrlInfo('dir/a.dart', null);
       var paths = _newPathMapper('', 'out', true);
       // TODO(jmesserly): this test is not quite right because we're supplying
       // the hasCss property. We should probably convert this to be a compiler

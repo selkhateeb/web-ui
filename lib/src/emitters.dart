@@ -736,8 +736,7 @@ void transformMainHtml(Document document, FileInfo fileInfo,
     if (doctype.tagName != 'html' || commentIndex != 1) {
       messages.warning('file should start with <!DOCTYPE html> '
           'to avoid the possibility of it being parsed in quirks mode in IE. '
-          'See http://www.w3.org/TR/html5-diff/#doctype',
-          doctype.sourceSpan, file: filePath);
+          'See http://www.w3.org/TR/html5-diff/#doctype', doctype.sourceSpan);
     }
   }
   document.nodes.insert(commentIndex, parseFragment(

@@ -12,6 +12,7 @@ import 'package:csslib/parser.dart' as css;
 import 'package:csslib/visitor.dart' show InfoVisitor, StyleSheet, treeToDebugString;
 import 'package:html5lib/dom.dart';
 import 'package:html5lib/parser.dart';
+import 'package:source_maps/span.dart' show Span;
 
 import 'analyzer.dart';
 import 'code_printer.dart';
@@ -45,7 +46,7 @@ Document parseHtml(contents, String sourcePath, Messages messages) {
   // Note: errors aren't fatal in HTML (unless strict mode is on).
   // So just print them as warnings.
   for (var e in parser.errors) {
-    messages.warning(e.message, e.span, file: sourcePath);
+    messages.warning(e.message, e.span);
   }
   return document;
 }
@@ -102,7 +103,7 @@ class Compiler {
   Future run() {
     if (path.basename(_mainPath).endsWith('.dart')) {
       _messages.error("Please provide an HTML file as your entry point.",
-          null, file: _mainPath);
+          null);
       return new Future.immediate(null);
     }
     return _parseAndDiscover(_mainPath).then((_) {
@@ -124,15 +125,13 @@ class Compiler {
     _tasks = new FutureGroup();
     _processed = new Set();
     _processed.add(inputFile);
-    _tasks.add(_parseHtmlFile(inputFile).then(_processHtmlFile));
+    _tasks.add(_parseHtmlFile(new UrlInfo(inputFile, null))
+        .then(_processHtmlFile));
     return _tasks.future;
   }
 
-  bool _shouldProcessFile(SourceFile file) =>
-      file != null && _pathMapper.checkInputPath(file.path, _messages);
-
   void _processHtmlFile(SourceFile file) {
-    if (!_shouldProcessFile(file)) return;
+    if (file == null) return;
 
     bool isEntryPoint = _processed.length == 1;
 
@@ -147,33 +146,35 @@ class Compiler {
     _processImports(fileInfo);
 
     // Load component files referenced by [file].
-    for (var href in fileInfo.componentLinks) {
+    for (var link in fileInfo.componentLinks) {
+      var href = link.resolvedPath;
       if (!_processed.contains(href)) {
         _processed.add(href);
-        _tasks.add(_parseHtmlFile(href).then(_processHtmlFile));
+        _tasks.add(_parseHtmlFile(link).then(_processHtmlFile));
       }
     }
 
     // Load stylesheet files referenced by [file].
-    for (var href in fileInfo.styleSheetHref) {
+    for (var link in fileInfo.styleSheetHref) {
+      var href = link.resolvedPath;
       if (!_processed.contains(href)) {
         _processed.add(href);
-        _tasks.add(_parseStyleSheetFile(href).then(_processStyleSheetFile));
+        _tasks.add(_parseStyleSheetFile(link).then(_processStyleSheetFile));
       }
     }
 
     // Load .dart files being referenced in the page.
     var src = fileInfo.externalFile;
-    if (src != null && !_processed.contains(src)) {
-      _processed.add(src);
+    if (src != null && !_processed.contains(src.resolvedPath)) {
+      _processed.add(src.resolvedPath);
       _tasks.add(_parseDartFile(src).then(_processDartFile));
     }
 
     // Load .dart files being referenced in components.
     for (var component in fileInfo.declaredComponents) {
       var src = component.externalFile;
-      if (src != null && !_processed.contains(src)) {
-        _processed.add(src);
+      if (src != null && !_processed.contains(src.resolvedPath)) {
+        _processed.add(src.resolvedPath);
         _tasks.add(_parseDartFile(src).then(_processDartFile));
       } else if (component.userCode != null) {
         _processImports(component);
@@ -189,7 +190,8 @@ class Compiler {
       var externalFile = component.externalFile;
       var name = null;
       if (externalFile != null) {
-        name = _pathMapper.mangle(path.basename(externalFile), '.dart');
+        name = _pathMapper.mangle(
+            path.basename(externalFile.resolvedPath), '.dart');
       } else {
         var declaringFile = component.declaringFile;
         var prefix = path.basename(declaringFile.inputPath);
@@ -205,42 +207,60 @@ class Compiler {
     }
   }
 
-  /** Asynchronously parse [path] as an .html file. */
-  Future<SourceFile> _parseHtmlFile(String filePath) {
-    return fileSystem.readTextOrBytes(filePath).then((source) {
+  /** Parse an HTML file. */
+  Future<SourceFile> _parseHtmlFile(UrlInfo inputPath) {
+    if (!_pathMapper.checkInputPath(inputPath, _messages)) {
+      return new Future<SourceFile>.immediate(null);
+    }
+    var filePath = inputPath.resolvedPath;
+    return fileSystem.readTextOrBytes(filePath)
+        .then((source) {
           var file = new SourceFile(filePath);
           file.document = _time('Parsed', filePath,
               () => parseHtml(source, filePath, _messages));
           return file;
         })
-        .catchError((e) => _readError(e, filePath));
+        .catchError((e) => _readError(e, inputPath));
   }
 
-  /** Parse [filename] and treat it as a .dart file. */
-  Future<SourceFile> _parseDartFile(String filePath) {
+  /** Parse a Dart file. */
+  Future<SourceFile> _parseDartFile(UrlInfo inputPath) {
+    if (!_pathMapper.checkInputPath(inputPath, _messages)) {
+      return new Future<SourceFile>.immediate(null);
+    }
+    var filePath = inputPath.resolvedPath;
     return fileSystem.readText(filePath)
         .then((code) => new SourceFile(filePath, type: SourceFile.DART)
             ..code = code)
-        .catchError((e) => _readError(e, filePath));
+        .catchError((e) => _readError(e, inputPath));
   }
 
-  SourceFile _readError(error, String filePath) {
-    _messages.error('exception while reading file, original message:\n $error',
-        null, file: filePath);
-
-    return null;
+  /** Parse a stylesheet file. */
+  Future<SourceFile> _parseStyleSheetFile(UrlInfo inputPath) {
+    if (!_pathMapper.checkInputPath(inputPath, _messages)) {
+      return new Future<SourceFile>.immediate(null);
+    }
+    var filePath = inputPath.resolvedPath;
+    return fileSystem.readText(filePath)
+        .then((code) => new SourceFile(filePath, type: SourceFile.STYLESHEET)
+            ..code = code)
+        .catchError((e) => _readError(e, inputPath, isWarning: true));
   }
 
-  /** Generate warning for any CSS file error. */
-  SourceFile _cssWarning(error, String filePath) {
-    _messages.warning('problem processing CSS file:\n $error',
-        null, file: filePath);
 
+  SourceFile _readError(error, UrlInfo inputPath, {isWarning: false}) {
+    var message = 'exception while reading file "${inputPath.resolvedPath}", '
+        'original message:\n $error';
+    if (isWarning) {
+      _messages.warning(message, inputPath.sourceSpan);
+    } else {
+      _messages.error(message, inputPath.sourceSpan);
+    }
     return null;
   }
 
   void _processDartFile(SourceFile dartFile) {
-    if (!_shouldProcessFile(dartFile)) return;
+    if (dartFile == null) return;
 
     files.add(dartFile);
 
@@ -266,21 +286,15 @@ class Compiler {
         }
       } else if (!_processed.contains(src)) {
         _processed.add(src);
-        _tasks.add(_parseDartFile(src).then(_processDartFile));
+        var resolvedPath = new UrlInfo(src,
+            library.userCode.sourceFile.span(directive.offset, directive.end));
+        _tasks.add(_parseDartFile(resolvedPath).then(_processDartFile));
       }
     }
   }
 
-  /** Parse [filename] and treat it as a .dart file. */
-  Future<SourceFile> _parseStyleSheetFile(String filePath) {
-    return fileSystem.readText(filePath)
-        .then((code) =>
-            new SourceFile(filePath, type: SourceFile.STYLESHEET)..code = code)
-        .catchError((e) => _cssWarning(e, filePath));
-  }
-
   void _processStyleSheetFile(SourceFile cssFile) {
-    if (!_shouldProcessFile(cssFile)) return;
+    if (cssFile == null) return;
 
     files.add(cssFile);
 
@@ -631,13 +645,17 @@ class Compiler {
     for (var component in fileInfo.declaredComponents) {
       // TODO(terry): Handle one stylesheet per component see fixupHtmlCss.
       if (component.styleSheets.length > 1 && options.processCss) {
+        var span = component.externalFile != null
+            ? component.externalFile.sourceSpan : null;
         _messages.warning(
-            'Component has more than one stylesheet'
-            ' - first stylesheet used.', null, file: component.externalFile);
+            'Component has more than one stylesheet - first stylesheet used.',
+            span);
       }
       var printer = new WebComponentEmitter(fileInfo, _messages)
           .run(component, _pathMapper, _edits[component.userCode]);
-      _emitFileAndSourceMaps(component, printer, component.externalFile);
+      var codePath = component.externalFile != null
+          ? component.externalFile.resolvedPath : null;
+      _emitFileAndSourceMaps(component, printer, codePath);
     }
   }
 
@@ -699,7 +717,7 @@ StyleSheet _parseCss(String content, String sourcePath, Messages messages,
     // Note: errors aren't fatal in HTML (unless strict mode is on).
     // So just print them as warnings.
     for (var e in errs) {
-      messages.warning(e.message, e.span, file: sourcePath);
+      messages.warning(e.message, e.span);
     }
 
     return stylesheet;

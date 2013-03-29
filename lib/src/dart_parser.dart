@@ -149,10 +149,10 @@ CompilationUnit parseCompilationUnit(String code, {String path,
 
       var severity = e.errorCode.errorSeverity;
       if (severity == ErrorSeverity.ERROR) {
-        messages.error(e.message, span, file: path);
+        messages.error(e.message, span);
       } else {
         assert(severity == ErrorSeverity.WARNING);
-        messages.warning(e.message, span, file: path);
+        messages.warning(e.message, span);
       }
     }
   }

@@ -46,7 +46,7 @@ abstract class LibraryInfo extends Hashable implements LibrarySummary {
    * [externalFile] has the path to such Dart file relative from the compiler's
    * base directory.
    */
-  String externalFile;
+  UrlInfo externalFile;
 
   /** Info asscociated with [externalFile], if any. */
   FileInfo externalCode;
@@ -112,7 +112,8 @@ class FileInfo extends LibraryInfo implements HtmlFileSummary {
   String get libraryName => path.basename(inputPath).replaceAll('.', '_');
 
   /** File where the top-level code was defined. */
-  String get dartCodePath => externalFile != null ? externalFile : inputPath;
+  String get dartCodePath => externalFile != null
+      ? externalFile.resolvedPath : inputPath;
 
   /**
    * All custom element definitions in this file. This may contain duplicates.
@@ -129,10 +130,10 @@ class FileInfo extends LibraryInfo implements HtmlFileSummary {
       new SplayTreeMap<String, ComponentSummary>();
 
   /** Files imported with `<link rel="component">` */
-  final List<String> componentLinks = <String>[];
+  final List<UrlInfo> componentLinks = <UrlInfo>[];
 
   /** Files imported with `<link rel="stylesheet">` */
-  final List<String> styleSheetHref = <String>[];
+  final List<UrlInfo> styleSheetHref = <UrlInfo>[];
 
   /** Root is associated with the body info. */
   ElementInfo bodyInfo;
@@ -186,8 +187,8 @@ class ComponentInfo extends LibraryInfo implements ComponentSummary {
   final Node template;
 
   /** File where this component was defined. */
-  String get dartCodePath =>
-      externalFile != null ? externalFile : declaringFile.inputPath;
+  String get dartCodePath => externalFile != null
+      ? externalFile.resolvedPath : declaringFile.inputPath;
 
   /**
    * True if [tagName] was defined by more than one component. If this happened
@@ -239,15 +240,14 @@ class ComponentInfo extends LibraryInfo implements ComponentSummary {
               'constructor="$oldCtor" attribute to the element declaration. '
               'Also custom tags are not required to start with "x-" if their '
               'name has at least one dash.',
-              element.sourceSpan, file: dartCodePath);
+              element.sourceSpan);
           className = oldCtor;
         }
       }
 
       if (_classDeclaration == null) {
         messages.error('please provide a class definition '
-            'for $className:\n $code', element.sourceSpan,
-            file: dartCodePath);
+            'for $className:\n $code', element.sourceSpan);
         return;
       }
     }
@@ -608,4 +608,19 @@ class _QueryInfo extends InfoVisitor {
     }
     return null;
   }
+}
+
+/** 
+ * Information extracted about a URL that refers to another file. This is
+ * mainly introduced to be able to trace back where URLs come from when
+ * reporting errors.
+ */
+class UrlInfo {
+  /** Path that the URL points to. */
+  final String resolvedPath;
+
+  /** Original source location where the URL was extracted from. */
+  final Span sourceSpan;
+
+  UrlInfo(this.resolvedPath, this.sourceSpan);
 }

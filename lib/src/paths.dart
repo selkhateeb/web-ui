@@ -10,6 +10,7 @@ library web_ui.src.paths;
 
 import 'dart:uri';
 
+import 'info.dart' show UrlInfo;
 import 'messages.dart';
 import 'summary.dart';
 import 'utils.dart' show path;
@@ -52,21 +53,19 @@ class PathMapper {
         : (forceSuffix ? "$name$suffix" : name);
 
   /**
-   * Checks if [input] is valid. It must be in [_baseDir] and must not be in
-   * the [_outputDir].
-   *
-   * Adds emitted error/warning messages to [messages], if [messages] is
-   * supplied.
+   * Checks that `input.resolvedPath` is a valid input path. It must be in
+   * [_baseDir] and must not be in the [_outputDir]. If not, an error message
+   * is added to [messages].
    */
-  bool checkInputPath(String input, Messages messages) {
+  bool checkInputPath(UrlInfo input, Messages messages) {
     if (_mangleFilenames) return true;
-    var canonicalized = path.normalize(input);
+    var canonicalized = path.normalize(input.resolvedPath);
     var parentDir = '..${path.separator}';
     if (!path.relative(canonicalized, from: _outputDir).startsWith(parentDir)) {
       messages.error(
           'The file ${input} cannot be processed. '
           'Files cannot be under the output folder (${_outputDir}).',
-          null, file: input);
+          input.sourceSpan);
       return false;
     }
     if (path.relative(canonicalized, from: _baseDir).startsWith(parentDir)) {
@@ -74,7 +73,7 @@ class PathMapper {
           'The file ${input} cannot be processed. '
           'All processed files must be under the base folder (${_baseDir}), you'
           ' can specify the base folder using the --basedir flag.',
-          null, file: input);
+          input.sourceSpan);
       return false;
     }
     return true;

@@ -82,6 +82,8 @@ main() {
         expect(msgs.length, 1);
         expect(msgs[0].level, Level.SEVERE);
         expect(msgs[0].message, contains('exception while reading file'));
+        expect(msgs[0].span, isNotNull);
+        expect(msgs[0].span.sourceUrl, 'index.html');
 
         MockFileSystem fs = compiler.fileSystem;
         expect(fs.readCount, { 'index.html': 1, 'notfound.dart': 1 });
@@ -106,6 +108,8 @@ main() {
         expect(msgs.length, 1);
         expect(msgs[0].level, Level.SEVERE);
         expect(msgs[0].message, contains('exception while reading file'));
+        expect(msgs[0].span, isNotNull);
+        expect(msgs[0].span.sourceUrl, 'index.html');
 
         MockFileSystem fs = compiler.fileSystem;
         expect(fs.readCount, { 'index.html': 1, 'notfound.html': 1 });
