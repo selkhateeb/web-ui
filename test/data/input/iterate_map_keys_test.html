@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<!--
+Copyright (c) 2012, the Dart project authors.  Please see the AUTHORS file
+for details. All rights reserved. Use of this source code is governed by a
+BSD-style license that can be found in the LICENSE file.
+-->
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <script src="packages/web_ui/testing/testing.js"></script>
+</head>
+<body>
+  Tests that we can iterate keys of a map and get change notifications.
+  With a normal template:
+  <div id="test1">{<template iterate="k in map.keys">{{k}}: {{map[k]}}, </template>}</div>
+  With a template attribute:
+  <div id="test2">{<div template iterate="k in map.keys">{{k}}: {{map[k]}}, </div>}</div>
+  <script type="application/dart">
+  import 'dart:async';
+  import 'dart:html';
+  import 'package:unittest/unittest.dart';
+  import 'package:web_ui/observe.dart';
+
+  @observable var map = toObservable({'a': 1, 'b': 2});
+
+  main() {
+
+    String getTestText(String id) {
+      var text = document.query(id).text;
+      // TODO(jmesserly): would be nice if it was easier to write this in
+      // templates, e.g. $index or similar.
+      text = text.replaceFirst(', }', '}');
+      return text;
+    }
+
+    Timer.run(() {
+      expect(getTestText('#test1'), map.toString());
+      expect(getTestText('#test2'), map.toString());
+      map['c'] = 3;
+
+      Timer.run(() {
+        expect(getTestText('#test1'), map.toString());
+        expect(getTestText('#test2'), map.toString());
+        map['d'] = 4;
+
+        window.postMessage('done', '*');
+      });
+    });
+  }
+  </script>
+</body>
+</html>

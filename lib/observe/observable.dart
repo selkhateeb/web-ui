@@ -292,6 +292,8 @@ class Observable {
 // Note: these are not instance methods of Observable, to make it clear that
 // they aren't themselves being observed. It is the same reason that mirrors and
 // EcmaScript's Object.observe are stratified.
+// TODO(jmesserly): this makes it impossible to proxy an Observable. Is that an
+// acceptable restriction?
 
 /**
  * True if [self] has any observers, and should call [notifyChange] for
@@ -527,6 +529,16 @@ class _ExpressionObserver {
     _activeObserver = this;
     try {
       _value = _expression();
+      // TODO(jmesserly): not sure if this belongs here. Iterables are tricky.
+      // Because of their lazy nature it's easy to use them incorrectly in
+      // expression observers. By forcing eager evaluation we avoid
+      // those problems. Another alternative would be to have Observable
+      // iterators that forward messages from the original collection, but that
+      // is difficult implement (and would have too much overhead because of
+      // how observeChanges is stratified).
+      if (_value is Iterable && _value is! Observable) {
+        _value = (_value as Iterable).toList();
+      }
     } catch (e, trace) {
       onObserveUnhandledError(e, trace, _expression, 'from $this');
       _value = null;
