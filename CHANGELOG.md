@@ -3,6 +3,16 @@
 This file contains highlights of what changes on each version of the web_ui
 package. This file is normally updated whenever we push a new version to pub.
 
+#### Pub version 0.4.4 - Mar 30 2013 (integration SDK 0.4.4 r20690)
+  * data binding for input type=file (thanks to @yohcop!)
+  * Switch observable to be a mixin
+  * Bug fixes:
+    - fix warning from new SDK (insertionPoint added to DOM)
+    - observable map iterators behaving incorrectly (fix #422)
+    - print more accurate error messages when files are not found (fix #435)
+    - don't update DOM properties when value is the same (fix #368)
+    - Implement == in SafeHtml and SafeUri
+
 #### Pub version 0.4.3+1 - Mar 28 2013 (integration SDK 0.4.3+5 r20602)
   * Bug fixes: fix import-urls in windows (issue #420)
   * Provide warnings when using bindings in ID attributes.
