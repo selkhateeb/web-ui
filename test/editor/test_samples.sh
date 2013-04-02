@@ -45,11 +45,4 @@ echo "Building..."
 dart build.dart
 
 echo "Running tests..."
-
-if [[ -d test/ ]]; then
-  dart test/test.dart
-else
-  # TODO(jmesserly): remove this once sample is updated.
-  echo "WARNING: The tests aren't in the Editor sample yet."
-  echo "The build will still be green for now when this happens."
-fi
+dart test/test.dart
