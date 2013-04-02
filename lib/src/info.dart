@@ -336,9 +336,6 @@ class ElementInfo extends NodeInfo<Element> {
    */
   ComponentSummary component;
 
-  /** Whether the element contains data bindings. */
-  bool hasDataBinding = false;
-
   /** Whether any child of this node is created in code. */
   bool childrenCreatedInCode = false;
 
@@ -403,7 +400,6 @@ class ElementInfo extends NodeInfo<Element> {
       'component: $component, '
       'hasIterate: $hasIterate, '
       'hasIfCondition: $hasIfCondition, '
-      'hasDataBinding: $hasDataBinding, '
       'hasQuery: $hasQuery, '
       'attributes: $attributes, '
       'events: $events>';
@@ -610,7 +606,7 @@ class _QueryInfo extends InfoVisitor {
   }
 }
 
-/** 
+/**
  * Information extracted about a URL that refers to another file. This is
  * mainly introduced to be able to trace back where URLs come from when
  * reporting errors.

@@ -120,43 +120,44 @@ main() {
       expect(info.toString().startsWith('#<ElementInfo '), true);
     });
 
-    test('hasDataBinding - attribute w/o data', () {
+    test('attribute w/o data', () {
       var input = '<input value="x">';
       var info = analyzeElement(parseSubtree(input));
-      expect(info.hasDataBinding, false);
+      expect(info.attributes, isEmpty);
     });
 
-    test('hasDataBinding - attribute with data, 1 way binding', () {
+    test('attribute with data, 1 way binding', () {
       var input = '<input value="{{x}}">';
       var info = analyzeElement(parseSubtree(input));
-      expect(info.hasDataBinding, true);
+      expect(info.attributes.keys, ['value']);
+      expect(messages.length, 0);
     });
 
-    test('hasDataBinding - attribute with data, 2 way binding', () {
+    test('attribute with data, 2 way binding', () {
       var input = '<input bind-value="x">';
       var info = analyzeElement(parseSubtree(input));
-      expect(info.hasDataBinding, true);
+      expect(info.attributes.keys, ['value']);
       expect(messages.length, 0);
     });
 
-    test('hasDataBinding - attribute with data, 2 way binding', () {
+    test('bind-value-as-date', () {
       var input = '<input bind-value-as-date="x">';
       var info = analyzeElement(parseSubtree(input));
-      expect(info.hasDataBinding, true);
+      expect(info.attributes.keys, ['valueAsDate']);
       expect(messages.length, 0);
     });
 
-    test('hasDataBinding - attribute with data, 2 way binding', () {
+    test('bind-value-as-number', () {
       var input = '<input bind-value-as-number="x">';
       var info = analyzeElement(parseSubtree(input));
-      expect(info.hasDataBinding, true);
+      expect(info.attributes.keys, ['valueAsNumber']);
       expect(messages.length, 0);
     });
 
-    test('hasDataBinding - content with data', () {
+    test('text content with data', () {
       var input = '<div>{{x}}</div>';
       var info = analyzeElement(parseSubtree(input));
-      expect(info.hasDataBinding, true);
+      expect(info.childrenCreatedInCode, true);
       expect(info.node.nodes.length, 1);
       var textInfo = info.children[0];
       expect(textInfo.binding.exp, 'x');
@@ -164,10 +165,10 @@ main() {
       expect(textInfo.node.value, '');
     });
 
-    test('hasDataBinding - content with data, one time binding', () {
+    test('content with data, one time binding', () {
       var input = '<div>{{x | final}}</div>';
       var info = analyzeElement(parseSubtree(input));
-      expect(info.hasDataBinding, true);
+      expect(info.childrenCreatedInCode, true);
       expect(info.node.nodes.length, 1);
       var textInfo = info.children[0];
       expect(textInfo.binding.exp, 'x');
@@ -175,12 +176,12 @@ main() {
       expect(textInfo.node.value, '');
     });
 
-    test('hasDataBinding - content with text and data', () {
+    test('content with text and data', () {
       var input = '<div> a b {{x}}c</div>';
       var info = analyzeElement(parseSubtree(input));
       expect(info.node.nodes.length, 1);
       expect(info.node.nodes[0].value, ' a b {{x}}c');
-      expect(info.hasDataBinding, true);
+      expect(info.childrenCreatedInCode, true);
 
       expect(info.children.length, 3);
       expect(info.children[0].node.value, ' a b ');
@@ -570,7 +571,6 @@ main() {
 
       var fileInfo = analyzeFiles(files);
       var bar = fileInfo['index.html'].query('x-bar');
-      expect(bar.hasDataBinding, true);
       expect(bar.attributes.keys, ['quux']);
       expect(bar.attributes['quux'].customTwoWayBinding, false);
       expect(bar.attributes['quux'].boundValue, '123');
@@ -588,7 +588,6 @@ main() {
       var fileInfo = analyzeFiles(files)['index.html'];
       var bar = fileInfo.query('x-bar');
       expect(bar.component, same(fileInfo.declaredComponents[0]));
-      expect(bar.hasDataBinding, true);
       expect(bar.attributes.keys, ['quux']);
       expect(bar.attributes['quux'].customTwoWayBinding, true);
       expect(bar.attributes['quux'].boundValue, 'assignable');

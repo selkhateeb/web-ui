@@ -215,9 +215,9 @@ class _Analyzer extends TreeVisitor {
   static bool _needsIdentifier(ElementInfo info) {
     if (info.isRoot) return false;
 
-    return info.hasDataBinding || info.hasIfCondition || info.hasIterate
-       || info.hasQuery || info.component != null || info.values.length > 0 ||
-       info.events.length > 0;
+    return info.childrenCreatedInCode || info.attributes.length > 0
+        || info.hasQuery || info.component != null || info.values.length > 0 ||
+        info.events.length > 0;
   }
 
   void _analyzeComponent(ComponentInfo component) {
@@ -386,7 +386,6 @@ class _Analyzer extends TreeVisitor {
 
     if (attrInfo != null) {
       info.attributes[name] = attrInfo;
-      info.hasDataBinding = true;
     }
   }
 
@@ -461,7 +460,6 @@ class _Analyzer extends TreeVisitor {
       _checkDuplicateAttribute(info, name);
       info.attributes[name] = new AttributeInfo([binding],
           customTwoWayBinding: true);
-      info.hasDataBinding = true;
       return true;
 
     } else {
@@ -474,7 +472,6 @@ class _Analyzer extends TreeVisitor {
 
     info.attributes[name] = new AttributeInfo([binding]);
     _addEvent(info, eventStream, (e) => '${binding.exp} = $e.$name');
-    info.hasDataBinding = true;
     return true;
   }
 
@@ -521,7 +518,6 @@ class _Analyzer extends TreeVisitor {
     info.attributes['checked'] = new AttributeInfo(
         [new BindingInfo("${binding.exp} == '$radioValue'", false)]);
     _addEvent(info, 'onChange', (e) => "${binding.exp} = '$radioValue'");
-    info.hasDataBinding = true;
     return true;
   }
 
@@ -610,7 +606,6 @@ class _Analyzer extends TreeVisitor {
       return;
     }
 
-    _parent.hasDataBinding = true;
     _parent.childrenCreatedInCode = true;
 
     // We split [text] so that each binding has its own text node.
