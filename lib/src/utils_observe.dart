@@ -2,8 +2,7 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-/** Utilities used by the observable library that should one day be removed. */
-library web_ui.observe.utils;
+library web_ui.src.utils_observe;
 
 import 'dart:isolate';
 
@@ -16,6 +15,8 @@ hash4(w, x, y, z) => hash2(hash2(w, x), hash2(y, z));
 
 // TODO(jmesserly): replace with something in dart:async, as long as it is based
 // on window.setImmediate/mutation observers/postMessage and not setTimeout(0)
+// Maybe we can use Future.immediate? We need it to be fast (next microtask)
+// like this though: http://dartbug.com/8757.
 /**
  * Adds an event to call [callback], so the event loop will call this after the
  * current stack has unwound.

@@ -6,7 +6,7 @@ library web_ui.observe.list;
 
 import 'dart:collection';
 import 'observable.dart';
-import 'package:web_ui/observe/utils.dart' show Arrays, CollectionBase;
+import 'package:web_ui/src/utils_observe.dart' show Arrays, CollectionBase;
 
 /**
  * Represents an observable list of model values. If any items are added,

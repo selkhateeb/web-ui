@@ -7,7 +7,7 @@ library web_ui.observe.set;
 import 'dart:collection';
 import 'observable.dart';
 import 'map.dart' show MapFactory;
-import 'package:web_ui/observe/utils.dart' show CollectionBase;
+import 'package:web_ui/src/utils_observe.dart' show CollectionBase;
 
 /**
  * Represents an observable set of model values. If any items are added,
