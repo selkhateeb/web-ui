@@ -268,3 +268,31 @@ class Hashable {
   final int hashCode = ++_nextHash;
 }
 
+
+/**
+ * Asserts that the condition is true, if not throws an [InternalError].
+ * Note: unlike "assert" we want these errors to be always on so we get bug
+ * reports.
+ */
+void compilerAssert(bool condition, String message) {
+  if (!condition) throw new InternalError(message);
+}
+
+// TODO(jmesserly): this is a start, but what we might want to instead: catch
+// all errors at the top level and log to message (including stack). That way if
+// we have a noSuchMethod error or something it will show up the same way as
+// this does, including the bug report link.
+/** Error thrown if there is a bug in the compiler itself. */
+class InternalError implements Error {
+  final message;
+
+  InternalError([this.message]);
+
+  String toString() {
+    return "We're sorry, you've just found a compiler bug. "
+      'You can report it at:\n'
+      'https://github.com/dart-lang/web-ui/issues/new\n'
+      'Thanks in advance for the bug report! It will help us improve Web UI.\n'
+      'Internal message: $message';
+  }
+}

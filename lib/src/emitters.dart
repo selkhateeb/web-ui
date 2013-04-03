@@ -68,13 +68,17 @@ void emitInitializations(ElementInfo info,
     printer.addLine("$id = ${_emitCreateHtml(info.node, context.statics)};",
         span: info.node.sourceSpan);
   } else if (!info.isRoot) {
-    var parentId = '_root';
+    String parentId;
     for (var p = info.parent; p != null; p = p.parent) {
       if (p.identifier != null) {
         parentId = p.identifier;
         break;
       }
     }
+
+    compilerAssert(parentId != null, 'If isRoot is false, we should always have'
+        ' a parent info that is root.');
+
     printer.addLine("$id = $parentId.query('#${info.node.id}');",
         span: info.node.sourceSpan);
   }
