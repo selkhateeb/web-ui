@@ -93,8 +93,20 @@ if [[ -e $DIR/data/input/example ]]; then
   popd
 fi
 
+# TODO(jmesserly): dart:io fails if we run the Dart scripts with an absolute
+# path. So use pushd/popd to change the working directory.
+pushd $DIR/..
+dart $DART_FLAGS build.dart
+# Run it the way the editor does. Hide stdout because it is in noisy machine
+# format. Show stderr in case something breaks.
+# NOTE: not using --checked because the editor doesn't use it, and to workaround
+# http://dartbug.com/9637
+dart build.dart --machine --clean > /dev/null
+dart build.dart --machine --full > /dev/null
+dart build.dart --machine --changed example/todomvc/web/index.html > /dev/null
+popd
+
 pushd $DIR
-# TODO(jmesserly): dart:io fails if we run_all with an absolute path.
 dart $DART_FLAGS run_all.dart $TEST_PATTERN || compare_all
 popd
 
