@@ -274,7 +274,7 @@ class Hashable {
  * Note: unlike "assert" we want these errors to be always on so we get bug
  * reports.
  */
-void compilerAssert(bool condition, String message) {
+void compilerAssert(bool condition, [String message]) {
   if (!condition) throw new InternalError(message);
 }
 
@@ -289,10 +289,14 @@ class InternalError implements Error {
   InternalError([this.message]);
 
   String toString() {
+    var additionalMessage = '';
+    if (message != null) {
+      additionalMessage = '\nInternal message: $message';
+    }
     return "We're sorry, you've just found a compiler bug. "
       'You can report it at:\n'
       'https://github.com/dart-lang/web-ui/issues/new\n'
-      'Thanks in advance for the bug report! It will help us improve Web UI.\n'
-      'Internal message: $message';
+      'Thanks in advance for the bug report! It will help us improve Web UI.'
+      '$additionalMessage';
   }
 }

@@ -68,18 +68,23 @@ void emitInitializations(ElementInfo info,
     printer.addLine("$id = ${_emitCreateHtml(info.node, context.statics)};",
         span: info.node.sourceSpan);
   } else if (!info.isRoot) {
-    String parentId;
-    for (var p = info.parent; p != null; p = p.parent) {
-      if (p.identifier != null) {
-        parentId = p.identifier;
-        break;
-      }
+    var parent = info.parent;
+    while (parent != null && parent.identifier == null) {
+      parent = parent.parent;
     }
-
-    compilerAssert(parentId != null, 'If isRoot is false, we should always have'
+    compilerAssert(parent != null, 'If isRoot is false, we should always have'
         ' a parent info that is root.');
 
-    printer.addLine("$id = $parentId.query('#${info.node.id}');",
+    // Note: we rely on the assumption that we are essentially indexing into a
+    // static HTML fragment. It has not been modified at the point where we are
+    // accessing a node from it. This allows us to rely on the path.
+    compilerAssert(!parent.childrenCreatedInCode,
+        'Parent should be a static HTML fragment.');
+
+    var path = _computeNodePath(info.node, parent.node);
+    var pathExpr = path.map((p) => '.nodes[$p]').join();
+
+    printer.addLine("$id = ${parent.identifier}$pathExpr;",
         span: info.node.sourceSpan);
   }
 
@@ -88,6 +93,55 @@ void emitInitializations(ElementInfo info,
   if (info.childrenCreatedInCode && !info.hasIterate && !info.hasIfCondition) {
     _emitAddNodes(printer, context.statics, info.children, '$id.nodes');
   }
+}
+
+/**
+ * Returns the path of the node from the provided root element. For example,
+ * given a tree like:
+ *
+ *     <a><b></b><c><d></d></c></a>
+ *
+ * The path of "d" starting from "a" would be: `[1, 0]`. In other words, we can
+ * get "d" like this:
+ *
+ *     var d = a.nodes[1].nodes[0];
+ *
+ * Note that we rely on the
+ */
+List<int> _computeNodePath(Node node, Node root) {
+  // We need to be extra careful because if you manipulate the DOM, it won't
+  // necessarily parse back into the same structure:
+  // http://www.whatwg.org/specs/web-apps/current-work/multipage/the-end.html#html-fragment-serialization-algorithm
+  // Since our manipulations are generally just removing things, I think we only
+  // need to deal with text nodes (adjacent and empty).
+
+  var path = [];
+  for (var n = node; n != root; n = n.parent) {
+    // TODO(jmesserly): this is linear, and could end up causing an O(N^2)
+    // compiler behavior in the aggregate if you had a node with lots of
+    // children and they each needed paths computed.
+    // We could avoid the N^2 in the compiler by caching the node's index, but
+    // since we can't directly store it on the node, it seems too complex and
+    // would make the typical case worse.
+
+    int index = 0;
+    var previous = null;
+    for (var child in n.parent.nodes) {
+      if (child == n) break;
+
+      if (child is Text) {
+        // Ignore empty text nodes and text nodes following other text nodes.
+        // These nodes will not be created by the HTML parser.
+        if (child.value == '' || previous is Text) continue;
+      }
+
+      index++;
+      previous = child;
+    }
+
+    path.add(index);
+  }
+  return path.reversed.toList();
 }
 
 /**

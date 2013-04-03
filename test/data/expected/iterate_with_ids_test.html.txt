@@ -1,0 +1,39 @@
+Content-Type: text/plain
+layer at (0,0) size 800x600
+  RenderView at (0,0) size 800x600
+layer at (0,0) size 800x160
+  RenderBlock {HTML} at (0,0) size 800x160
+    RenderBody {BODY} at (8,8) size 784x144
+      RenderBlock (anonymous) at (0,0) size 784x18
+        RenderText {#text} at (0,0) size 440x18
+          text run at (0,0) width 440: "Tests that we can iterate items and use IDs:"
+      RenderBlock {DIV} at (0,18) size 784x18
+        RenderText {#text} at (0,0) size 10x18
+          text run at (0,0) width 10: "a"
+      RenderBlock {DIV} at (0,36) size 784x18
+        RenderText {#text} at (0,0) size 10x18
+          text run at (0,0) width 10: "b"
+      RenderBlock {DIV} at (0,54) size 784x18
+        RenderText {#text} at (0,0) size 10x18
+          text run at (0,0) width 10: "c"
+      RenderBlock (anonymous) at (0,72) size 784x18
+        RenderText {#text} at (0,0) size 480x18
+          text run at (0,0) width 480: "Same thing, this time with indentation=\"remove\":"
+      RenderBlock {DIV} at (0,90) size 784x18
+        RenderText {#text} at (0,0) size 70x18
+          text run at (0,0) width 70: "indent_"
+        RenderText {#text} at (70,0) size 10x18
+          text run at (70,0) width 10: "a"
+      RenderBlock {DIV} at (0,108) size 784x18
+        RenderText {#text} at (0,0) size 70x18
+          text run at (0,0) width 70: "indent_"
+        RenderText {#text} at (70,0) size 10x18
+          text run at (70,0) width 10: "b"
+      RenderBlock {DIV} at (0,126) size 784x18
+        RenderText {#text} at (0,0) size 70x18
+          text run at (0,0) width 70: "indent_"
+        RenderText {#text} at (70,0) size 10x18
+          text run at (70,0) width 10: "c"
+      RenderBlock (anonymous) at (0,144) size 784x0
+        RenderText {#text} at (0,0) size 0x0
+        RenderText {#text} at (0,0) size 0x0

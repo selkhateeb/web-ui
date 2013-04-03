@@ -343,10 +343,12 @@ class ElementInfo extends NodeInfo<Element> {
   bool isRoot = false;
 
   /**
-   * True if some descendant needs to query starting from this element.
-   * If this is true, we will generate a variable for this node.
+   * True if this element needs to be stored in a variable (or field) because
+   * we'll access a descendant (child, grandchild, etc) needs a variable.
+   * In that case, we'll access the descendant starting from this element using
+   * a path. This will only be set if this element is [createdInCode].
    */
-  bool hasQuery = false;
+  bool descendantHasBinding = false;
 
   // Note: we're using sorted maps so items are enumerated in a consistent order
   // between runs, resulting in less "diff" in the generated code.
@@ -398,9 +400,9 @@ class ElementInfo extends NodeInfo<Element> {
       'identifier: $identifier, '
       'childrenCreatedInCode: $childrenCreatedInCode, '
       'component: $component, '
+      'descendantHasBinding: $descendantHasBinding, '
       'hasIterate: $hasIterate, '
       'hasIfCondition: $hasIfCondition, '
-      'hasQuery: $hasQuery, '
       'attributes: $attributes, '
       'events: $events>';
 }

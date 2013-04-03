@@ -181,27 +181,25 @@ class _Analyzer extends TreeVisitor {
     _parent = savedParent;
 
     if (_needsIdentifier(info)) {
-      _ensureParentHasQuery(info);
+      _ensureParentHasVariable(info);
       if (info.identifier == null) {
         _uniqueIds.moveNext();
-        var id = '__e-${_uniqueIds.current}';
-        info.identifier = toCamelCase(id);
-        // If it's not created in code, we'll query the element by it's id.
-        if (!info.createdInCode && node.id == '') node.attributes['id'] = id;
+        info.identifier = toCamelCase('__e-${_uniqueIds.current}');
       }
     }
   }
 
   /**
    * If this [info] is not created in code, ensure that whichever parent element
-   * is created in code has been marked appropriately, so we get an identifier.
+   * is created in code has been marked appropriately, so the parent is stored
+   * in a variable/field and we can access this element from it.
    */
-  static void _ensureParentHasQuery(ElementInfo info) {
+  static void _ensureParentHasVariable(ElementInfo info) {
     if (info.isRoot || info.createdInCode) return;
 
     for (var p = info.parent; p != null; p = p.parent) {
       if (p.createdInCode) {
-        p.hasQuery = true;
+        p.descendantHasBinding = true;
         return;
       }
     }
@@ -215,9 +213,9 @@ class _Analyzer extends TreeVisitor {
   static bool _needsIdentifier(ElementInfo info) {
     if (info.isRoot) return false;
 
-    return info.childrenCreatedInCode || info.attributes.length > 0
-        || info.hasQuery || info.component != null || info.values.length > 0 ||
-        info.events.length > 0;
+    return info.childrenCreatedInCode || info.descendantHasBinding ||
+        info.component != null || info.attributes.length > 0 ||
+        info.values.length > 0 || info.events.length > 0;
   }
 
   void _analyzeComponent(ComponentInfo component) {
@@ -371,15 +369,6 @@ class _Analyzer extends TreeVisitor {
       attrInfo = _readStyleAttribute(info, value);
     } else if (name == 'class') {
       attrInfo = _readClassAttribute(info, value);
-    } else if (name == 'id') {
-      if (value.contains("{{")) {
-        _messages.warning(
-            'Sorry, bindings in "id" attributes are not yet supported. '
-            'These bindings will be ignored. See '
-            'https://github.com/dart-lang/web-ui/issues/284 for more details.',
-            info.node.sourceSpan);
-        return;
-      }
     } else {
       attrInfo = _readAttribute(info, name, value);
     }

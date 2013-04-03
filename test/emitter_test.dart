@@ -106,33 +106,33 @@ main() {
 
       test('action with no id', () {
         var elem = _parseBody('<div on-foo="bar(\$event)"></div>');
-        expect(_init(elem), equals("__e0 = _root.query('#__e-0');"));
+        expect(_init(elem), equals("__e0 = _root.nodes[0];"));
       });
 
       test('action with id', () {
         var elem = _parseBody('<div id="my-id" on-foo="bar(\$event)"></div>');
-        expect(_init(elem), equals("__e0 = _root.query('#my-id');"));
+        expect(_init(elem), equals("__e0 = _root.nodes[0];"));
       });
 
       test('1 way binding with no id', () {
         var elem = _parseBody('<div class="{{bar}}"></div>');
-        expect(_init(elem), equals("__e0 = _root.query('#__e-0');"));
+        expect(_init(elem), equals("__e0 = _root.nodes[0];"));
       });
 
       test('1 way binding with id', () {
         var elem = _parseBody('<div id="my-id" class="{{bar}}"></div>');
-        expect(_init(elem), equals("__e0 = _root.query('#my-id');"));
+        expect(_init(elem), equals("__e0 = _root.nodes[0];"));
       });
 
       test('2 way binding with no id', () {
         var elem = _parseBody('<input bind-value="bar"></input>');
-        expect(_init(elem), equals("__e0 = _root.query('#__e-0');"));
+        expect(_init(elem), equals("__e0 = _root.nodes[0];"));
       });
 
       test('2 way binding with id', () {
         var elem = _parseBody(
           '<input id="my-id" bind-value="bar"></input>');
-        expect(_init(elem), equals("__e0 = _root.query('#my-id');"));
+        expect(_init(elem), equals("__e0 = _root.nodes[0];"));
       });
     });
 
@@ -175,14 +175,14 @@ main() {
     test('created', () {
       var elem = _parseBody('<div on-foo="bar(\$event)"></div>');
       expect(_created(elem), equalsIgnoringWhitespace(
-          r"__e0 = _root.query('#__e-0'); "
+          r"__e0 = _root.nodes[0]; "
           r'__t.listen(__e0.onFoo, ($event) { bar($event); });'));
     });
 
     test('created for input value data bind', () {
       var elem = _parseBody('<input bind-value="bar"></input>');
       expect(_created(elem), equalsIgnoringWhitespace(
-          r"__e0 = _root.query('#__e-0'); "
+          r"__e0 = _root.nodes[0]; "
           r'__t.listen(__e0.onInput, ($event) { bar = __e0.value; }); '
           '__t.oneWayBind(() => bar, (e) { '
               'if (__e0.value != e) __e0.value = e; }, false, false);'));
@@ -193,7 +193,7 @@ main() {
     test('created', () {
       var elem = _parseBody('<div foo="{{bar}}"></div>');
       expect(_created(elem), equalsIgnoringWhitespace(
-          r"__e0 = _root.query('#__e-0'); "
+          r"__e0 = _root.nodes[0]; "
           "__t.oneWayBind(() => bar, (e) { "
               "if (__e0.attributes['foo'] != e) __e0.attributes['foo'] = e; },"
               " false, false);"));
@@ -202,7 +202,7 @@ main() {
     test('created for 1-way binding with dom accessor', () {
       var elem = _parseBody('<input value="{{bar}}">');
       expect(_created(elem), equalsIgnoringWhitespace(
-          r"__e0 = _root.query('#__e-0'); "
+          r"__e0 = _root.nodes[0]; "
           "__t.oneWayBind(() => bar, (e) { "
               "if (__e0.value != e) __e0.value = e; }, false, false);"));
     });
@@ -210,7 +210,7 @@ main() {
     test('created for 2-way binding with dom accessor', () {
       var elem = _parseBody('<input bind-value="bar">');
       expect(_created(elem), equalsIgnoringWhitespace(
-          r"__e0 = _root.query('#__e-0'); "
+          r"__e0 = _root.nodes[0]; "
           r'__t.listen(__e0.onInput, ($event) { bar = __e0.value; }); '
           '__t.oneWayBind(() => bar, (e) { '
               'if (__e0.value != e) __e0.value = e; }, false, false);'));
@@ -219,7 +219,7 @@ main() {
     test('created for data attribute', () {
       var elem = _parseBody('<div data-foo="{{bar}}"></div>');
       expect(_created(elem), equalsIgnoringWhitespace(
-          r"__e0 = _root.query('#__e-0'); "
+          r"__e0 = _root.nodes[0]; "
           "__t.oneWayBind(() => bar, (e) { "
               "if (__e0.attributes['data-foo'] != e) "
               "__e0.attributes['data-foo'] = e; }, false, false);"));
@@ -228,7 +228,7 @@ main() {
     test('created for class', () {
       var elem = _parseBody('<div class="{{bar}} {{foo}}" />');
       expect(_created(elem), equalsIgnoringWhitespace(
-          r"__e0 = _root.query('#__e-0'); "
+          r"__e0 = _root.nodes[0]; "
           "__t.bindClass(__e0, () => bar, false); "
           "__t.bindClass(__e0, () => foo, false);"));
     });
@@ -236,7 +236,7 @@ main() {
     test('created for style', () {
       var elem = _parseBody('<div style="{{bar}}"></div>');
       expect(_created(elem), equalsIgnoringWhitespace(
-          r"__e0 = _root.query('#__e-0'); "
+          r"__e0 = _root.nodes[0]; "
           '__t.bindStyle(__e0, () => bar, false);'));
     });
 
@@ -244,7 +244,7 @@ main() {
       test('created', () {
         var elem = _parseBody('<div foo="{{bar | final}}"></div>');
         expect(_created(elem), equalsIgnoringWhitespace(
-            r"__e0 = _root.query('#__e-0'); "
+            r"__e0 = _root.nodes[0]; "
             "__t.oneWayBind(() => bar, (e) { "
                 "if (__e0.attributes['foo'] != e) "
                 "__e0.attributes['foo'] = e; }, true, false);"));
@@ -253,7 +253,7 @@ main() {
       test('created for 1-way binding with dom accessor', () {
         var elem = _parseBody('<input value="{{bar | final}}">');
         expect(_created(elem), equalsIgnoringWhitespace(
-            r"__e0 = _root.query('#__e-0'); "
+            r"__e0 = _root.nodes[0]; "
             r'__t.oneWayBind(() => bar, (e) { '
             r'if (__e0.value != e) __e0.value = e; }, true, false); '));
       });
@@ -261,7 +261,7 @@ main() {
       test('created for 2-way binding with dom accessor', () {
         var elem = _parseBody('<input bind-value="bar | final">');
         expect(_created(elem), equalsIgnoringWhitespace(
-            r"__e0 = _root.query('#__e-0'); "
+            r"__e0 = _root.nodes[0]; "
             r'__t.listen(__e0.onInput, ($event) { bar = __e0.value; }); '
             r'__t.oneWayBind(() => bar, (e) { '
             r'if (__e0.value != e) __e0.value = e; }, true, false); '));
@@ -270,7 +270,7 @@ main() {
       test('created for data attribute', () {
         var elem = _parseBody('<div data-foo="{{bar | final}}"></div>');
         expect(_created(elem), equalsIgnoringWhitespace(
-            r"__e0 = _root.query('#__e-0'); "
+            r"__e0 = _root.nodes[0]; "
             "__t.oneWayBind(() => bar, (e) { "
                 "if (__e0.attributes['data-foo'] != e) "
                 "__e0.attributes['data-foo'] = e; }, true, false);"));
@@ -279,7 +279,7 @@ main() {
       test('created for class', () {
         var elem = _parseBody('<div class="{{a | final}}{{b | final}}"/>');
         expect(_created(elem), equalsIgnoringWhitespace(
-            r"__e0 = _root.query('#__e-0'); "
+            r"__e0 = _root.nodes[0]; "
             "__t.bindClass(__e0, () => a, true); "
             "__t.bindClass(__e0, () => b, true);"));
       });
@@ -287,7 +287,7 @@ main() {
       test('created for style', () {
         var elem = _parseBody('<div style="{{bar | final}}"></div>');
         expect(_created(elem), equalsIgnoringWhitespace(
-            r"__e0 = _root.query('#__e-0'); "
+            r"__e0 = _root.nodes[0]; "
             '__t.bindStyle(__e0, () => bar, true);'));
       });
     });

@@ -94,12 +94,9 @@ main() {
         var input = '<div id="foo-{{x}}"></div>';
         var node = parseSubtree(input);
         var info = analyzeElement(node);
-        expect(info.identifier, isNull,
-            reason: 'Bindings in "id" are currently ignored.');
-        expect(messages.length, 1);
-        expect(messages[0].message,
-            contains('bindings in "id" attributes are not yet supported'));
-        expect(messages[0].span, equals(node.sourceSpan));
+        expect(info.identifier, '__e0');
+        expect(info.attributes.keys, ['id']);
+        expect(messages.length, 0);
       });
 
       test('id contains bindings, node has other bindings', () {
@@ -107,10 +104,9 @@ main() {
         var node = parseSubtree(input);
         var info = analyzeElement(node);
         expect(info.identifier, '__e0');
-        expect(messages.length, 1);
-        expect(messages[0].message,
-            contains('bindings in "id" attributes are not yet supported'));
-        expect(messages[0].span, equals(node.sourceSpan));
+        expect(info.attributes.keys, ['id']);
+        expect(info.events.keys, ['onClick']);
+        expect(messages.length, 0);
       });
     });
 
@@ -448,7 +444,7 @@ main() {
       expect(info.children[0].node, equals(div));
       expect(info.children[0].createdInCode, true);
       expect(div.id, '');
-      expect(elem.attributes, equals({'if': 'foo', 'id': '__e-0'}));
+      expect(elem.attributes, equals({'if': 'foo'}));
       expect(info.ifCondition, equals('foo'));
       expect(info.hasIterate, isFalse);
       expect(messages.length, 0);
@@ -463,7 +459,7 @@ main() {
       expect(info.children[0].node, equals(div));
       expect(info.children[0].createdInCode, true);
       expect(div.id, '');
-      expect(elem.attributes, equals({'instantiate': 'if foo', 'id': '__e-0'}));
+      expect(elem.attributes, equals({'instantiate': 'if foo'}));
       expect(info.ifCondition, equals('foo'));
       expect(info.hasIterate, isFalse);
       expect(messages.length, 0);
@@ -505,7 +501,7 @@ main() {
       expect(info.children[0].createdInCode, true);
       expect(div.id, '');
       expect(elem.attributes, equals({
-          'iterate': 'foo in bar', 'is': 'x-list', 'id': '__e-0'}));
+          'iterate': 'foo in bar', 'is': 'x-list'}));
       expect(info.ifCondition, isNull);
       expect(info.loopVariable, equals('foo'));
       expect(info.loopItems, equals('bar'));
