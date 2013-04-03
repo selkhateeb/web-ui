@@ -42,12 +42,6 @@ typedef void ChangeUnobserver();
 typedef Object ObservableExpression();
 
 /**
- * Test for equality of two objects. For example [Object.==] and [identical]
- * are two kinds of equality tests.
- */
-typedef bool EqualityTest(Object a, Object b);
-
-/**
  * A notification of a change to an [ObservableExpression] that is passed to a
  * [ChangeObserver].
  */
