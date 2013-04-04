@@ -225,8 +225,8 @@ ChangeUnobserver observe(value, ChangeObserver callback, [String debugName]) {
  * delivered again asynchronously, unless the value is changed again.
  */
 ChangeUnobserver observeChanges(Observable obj, ChangeRecordObserver observer) {
-  if (obj._observers == null) obj._observers = new LinkedList();
-  var node = obj._observers.add(observer);
+  if (obj.$_observers == null) obj.$_observers = new LinkedList();
+  var node = obj.$_observers.add(observer);
   return node.remove;
 }
 
@@ -266,19 +266,21 @@ toObservable(value) {
  * of Mirrors.
  */
 class Observable {
-  // TODO(jmesserly): make these fields private once we have mixins in Dart VM.
-
   /** Observers for this object. Uses a linked-list for fast removal. */
-  LinkedList<ChangeRecordObserver> _observers;
+  // TODO(jmesserly): make these fields private again once dart2js bugs around
+  // mixins and private fields are fixed.
+  // TODO(jmesserly): removed type annotation here to workaround a VM checked
+  // mode bug. It should be: LinkedList<ChangeRecordObserver>
+  var $_observers;
 
   /** Changes to this object since last batch was delivered. */
-  List<ChangeRecord> _changes;
+  List<ChangeRecord> $_changes;
 
-  final int hashCode = ++Observable._nextHashCode;
+  final int hashCode = ++Observable.$_nextHashCode;
 
   // TODO(jmessery): workaround for VM bug http://dartbug.com/5746
   // We need hashCode to be fast for _ExpressionObserver to work.
-  static int _nextHashCode = 0;
+  static int $_nextHashCode = 0;
 }
 
 // Note: these are not instance methods of Observable, to make it clear that
@@ -295,7 +297,7 @@ class Observable {
  * You should not need it if your type is marked `@observable`.
  */
 bool hasObservers(Observable self) =>
-    self._observers != null && self._observers.head != null;
+    self.$_observers != null && self.$_observers.head != null;
 
 /**
  * True if we are observing reads. This should be checked before calling
@@ -344,11 +346,11 @@ void notifyChange(Observable self, int type, key,
     _changedObjects = [];
     setImmediate(deliverChangesSync);
   }
-  if (self._changes == null) {
-    self._changes = [];
+  if (self.$_changes == null) {
+    self.$_changes = [];
     _changedObjects.add(self);
   }
-  self._changes.add(new ChangeRecord(type, key, oldValue, newValue));
+  self.$_changes.add(new ChangeRecord(type, key, oldValue, newValue));
 }
 
 // Optimizations to avoid extra work if observing const/final data.
@@ -412,10 +414,10 @@ void deliverChangesSync() {
         // observers see, possibly leading to subtle bugs.
         // OTOH, I don't want to add a defensive copy here. Maybe a wrapper that
         // prevents mutation, or a ListBuilder of some sort than can be frozen.
-        var changes = observable._changes;
-        observable._changes = null;
+        var changes = observable.$_changes;
+        observable.$_changes = null;
 
-        for (var n = observable._observers.head; n != null; n = n.next) {
+        for (var n = observable.$_observers.head; n != null; n = n.next) {
           var observer = n.value;
           try {
             observer(changes);
@@ -452,7 +454,7 @@ void _diagnoseCircularLimit(List<Observable> changedObjects,
   var trace = [];
   if (changedObjects != null) {
     for (var observable in changedObjects) {
-      var changes = observable._changes;
+      var changes = observable.$_changes;
       trace.add('$observable $changes');
     }
   }
