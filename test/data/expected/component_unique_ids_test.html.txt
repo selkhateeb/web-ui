@@ -7,9 +7,9 @@ layer at (0,0) size 800x70
       RenderBlock (anonymous) at (0,0) size 784x18
         RenderText {#text} at (0,0) size 380x18
           text run at (0,0) width 380: "You should see a message from B then A"
-        RenderInline {X-COMPONENT-A} at (0,0) size 0x0
+        RenderInline {SPAN} at (0,0) size 0x0
           RenderText {#text} at (0,0) size 0x0
-          RenderInline {X-COMPONENT-B} at (0,0) size 0x0
+          RenderInline {SPAN} at (0,0) size 0x0
             RenderText {#text} at (0,0) size 0x0
             RenderText {#text} at (0,0) size 0x0
       RenderBlock (anonymous) at (0,18) size 784x18
@@ -17,15 +17,15 @@ layer at (0,0) size 800x70
           RenderText {#text} at (0,0) size 120x18
             text run at (0,0) width 120: "hello from B"
       RenderBlock (anonymous) at (0,36) size 784x0
-        RenderInline {X-COMPONENT-A} at (0,0) size 0x0
-          RenderInline {X-COMPONENT-B} at (0,0) size 0x0
+        RenderInline {SPAN} at (0,0) size 0x0
+          RenderInline {SPAN} at (0,0) size 0x0
           RenderText {#text} at (0,0) size 0x0
       RenderBlock (anonymous) at (0,36) size 784x18
         RenderBlock {DIV} at (0,0) size 784x18
           RenderText {#text} at (0,0) size 120x18
             text run at (0,0) width 120: "hello from A"
       RenderBlock (anonymous) at (0,54) size 784x0
-        RenderInline {X-COMPONENT-A} at (0,0) size 0x0
+        RenderInline {SPAN} at (0,0) size 0x0
           RenderText {#text} at (0,0) size 0x0
         RenderText {#text} at (0,0) size 0x0
         RenderText {#text} at (0,0) size 0x0

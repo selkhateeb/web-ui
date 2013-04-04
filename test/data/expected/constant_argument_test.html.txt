@@ -6,7 +6,7 @@ layer at (0,0) size 800x34
     RenderBody {BODY} at (8,8) size 784x18
       RenderText {#text} at (0,0) size 180x18
         text run at (0,0) width 180: "Expect \"1 2 3 4\": "
-      RenderInline {X-FOO} at (0,0) size 10x18
+      RenderInline {SPAN} at (0,0) size 10x18
         RenderText {#text} at (180,0) size 10x18
           text run at (180,0) width 10: "1"
       RenderText {#text} at (190,0) size 10x18
@@ -16,12 +16,12 @@ layer at (0,0) size 800x34
           text run at (200,0) width 10: "2"
       RenderText {#text} at (210,0) size 10x18
         text run at (210,0) width 10: " "
-      RenderInline {X-FOO} at (0,0) size 10x18
+      RenderInline {SPAN} at (0,0) size 10x18
         RenderText {#text} at (220,0) size 10x18
           text run at (220,0) width 10: "3"
       RenderText {#text} at (230,0) size 10x18
         text run at (230,0) width 10: " "
-      RenderInline {X-FOO} at (0,0) size 10x18
+      RenderInline {SPAN} at (0,0) size 10x18
         RenderText {#text} at (240,0) size 10x18
           text run at (240,0) width 10: "4"
       RenderText {#text} at (0,0) size 0x0

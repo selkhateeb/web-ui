@@ -11,24 +11,24 @@ layer at (0,0) size 800x260
       RenderBlock (anonymous) at (0,102) size 784x22
         RenderTextControl {INPUT} at (0,2) size 300x18 [color=#9400D3] [bgcolor=#E0FFFF]
         RenderText {#text} at (0,0) size 0x0
-        RenderInline {X-COMP1} at (0,0) size 0x0
+        RenderInline {SPAN} at (0,0) size 0x0
           RenderText {#text} at (0,0) size 0x0
       RenderBlock (anonymous) at (0,124) size 784x60
         RenderBlock {DIV} at (0,0) size 340x60
           RenderTextControl {INPUT} at (20,20) size 300x20 [color=#FF0000] [bgcolor=#0000FF]
           RenderText {#text} at (0,0) size 0x0
       RenderBlock (anonymous) at (0,184) size 784x0
-        RenderInline {X-COMP1} at (0,0) size 0x0
+        RenderInline {SPAN} at (0,0) size 0x0
           RenderText {#text} at (0,0) size 0x0
         RenderText {#text} at (0,0) size 0x0
-        RenderInline {X-COMP1} at (0,0) size 0x0
+        RenderInline {SPAN} at (0,0) size 0x0
           RenderText {#text} at (0,0) size 0x0
       RenderBlock (anonymous) at (0,184) size 784x60
         RenderBlock {DIV} at (0,0) size 340x60
           RenderTextControl {INPUT} at (20,20) size 300x20 [color=#FFFF00] [bgcolor=#008000]
           RenderText {#text} at (0,0) size 0x0
       RenderBlock (anonymous) at (0,244) size 784x0
-        RenderInline {X-COMP1} at (0,0) size 0x0
+        RenderInline {SPAN} at (0,0) size 0x0
           RenderText {#text} at (0,0) size 0x0
         RenderText {#text} at (0,0) size 0x0
         RenderText {#text} at (0,0) size 0x0

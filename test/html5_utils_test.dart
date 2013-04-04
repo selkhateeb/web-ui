@@ -23,7 +23,7 @@ import 'testing.dart';
 main() {
   useCompactVMConfiguration();
   var dir = path.join(
-      path.absolute(path.dirname(new Options().script)), 'data', 'output');
+      path.absolute(path.dirname(new Options().script)), 'data', 'out');
 
   test('generate type test for tag -> element mapping', () {
     var code = new StringBuffer();

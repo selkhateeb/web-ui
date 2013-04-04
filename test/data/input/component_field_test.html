@@ -51,7 +51,10 @@
 
     main() {
       Timer.run(() {
-        expect(query('x-greeter').attributes, { 'title': 'world' });
+        expect(query('div[is=x-greeter]').attributes, {
+          'is': 'x-greeter',
+          'title': 'world'
+        });
         window.postMessage('done', '*');
       });
     }

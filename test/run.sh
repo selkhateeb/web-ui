@@ -66,16 +66,21 @@ function compare_all {
 # TODO(jmesserly): bash and dart regexp might not be 100% the same. Ideally we
 # could do all the heavy lifting in Dart code, and keep this script as a thin
 # wrapper that sets `--enable-type-checks --enable-asserts`
-  for input in $DIR/data/input/*_test.html; do
+  for input in $DIR/data/input/*_test.html $DIR/../example/component/news/test/*_test.html $DIR/../example/todomvc/test/*_test.html; do
     if [[ ($TEST_PATTERN == "") || ($input =~ $TEST_PATTERN) ]]; then
       FILENAME=`basename $input`
+      DIRNAME=`dirname $input`
+      if [[ `basename $DIRNAME` == 'input' ]]; then
+        DIRNAME=`dirname $DIRNAME`
+      fi
       echo -e -n "Checking diff for $FILENAME "
-      DUMP="$DIR/data/output/$FILENAME.txt"
-      EXPECTATION="$DIR/data/expected/$FILENAME.txt"
+      DUMP="$DIRNAME/out/$FILENAME.txt"
+      EXPECTATION="$DIRNAME/expected/$FILENAME.txt"
 
       compare $EXPECTATION $DUMP
     fi
   done
+  echo -e "[31mSome tests failed[0m"
   fail
 }
 
@@ -95,16 +100,18 @@ fi
 
 # TODO(jmesserly): dart:io fails if we run the Dart scripts with an absolute
 # path. So use pushd/popd to change the working directory.
-pushd $DIR/..
-dart $DART_FLAGS build.dart
-# Run it the way the editor does. Hide stdout because it is in noisy machine
-# format. Show stderr in case something breaks.
-# NOTE: not using --checked because the editor doesn't use it, and to workaround
-# http://dartbug.com/9637
-dart build.dart --machine --clean > /dev/null
-dart build.dart --machine --full > /dev/null
-dart build.dart --machine --changed example/todomvc/web/index.html > /dev/null
-popd
+if [[ ($TEST_PATTERN == "") ]]; then
+  pushd $DIR/..
+  dart $DART_FLAGS build.dart
+  # Run it the way the editor does. Hide stdout because it is in noisy machine
+  # format. Show stderr in case something breaks.
+  # NOTE: not using --checked because the editor doesn't use it, and to workaround
+  # http://dartbug.com/9637
+  dart build.dart --machine --clean > /dev/null
+  dart build.dart --machine --full > /dev/null
+  dart build.dart --machine --changed example/todomvc/web/index.html > /dev/null
+  popd
+fi
 
 pushd $DIR
 dart $DART_FLAGS run_all.dart $TEST_PATTERN || compare_all

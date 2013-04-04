@@ -1,4 +1,4 @@
-// Copyright (c) 2012, the Dart project authors.  Please see the AUTHORS file
+// Copyright (c) 2013, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
@@ -334,7 +334,7 @@ class ElementInfo extends NodeInfo<Element> {
    * If this element is a web component instantiation (e.g. `<x-foo>`), this
    * will be set to information about the component, otherwise it will be null.
    */
-  ComponentSummary component;
+  final ComponentSummary component;
 
   /** Whether any child of this node is created in code. */
   bool childrenCreatedInCode = false;
@@ -385,16 +385,12 @@ class ElementInfo extends NodeInfo<Element> {
    * For a builtin HTML element this returns the [node.tagName], otherwise it
    * returns [component.baseExtendsTag]. This is useful when looking up which
    * DOM property this element supports.
-   *
-   * **Note:** this returns node.tagName right now, until we fix issue #82.
    */
-  String get baseTagName {
-    return node.tagName;
-    // TODO(jmesserly): turn this on when issue #82 is fixed.
-    //return component != null ? component.baseExtendsTag : node.tagName;
-  }
+  String get baseTagName =>
+      component != null ? component.baseExtendsTag : node.tagName;
 
-  ElementInfo(Element node, ElementInfo parent) : super(node, parent);
+  ElementInfo(Element node, ElementInfo parent, [this.component])
+      : super(node, parent);
 
   String toString() => '#<ElementInfo '
       'identifier: $identifier, '

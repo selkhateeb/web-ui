@@ -9,6 +9,6 @@ layer at (0,0) size 800x34
           text run at (0,0) width 270: "this should say \"hello hi\":"
         RenderText {#text} at (270,0) size 50x18
           text run at (270,0) width 50: "hello"
-        RenderInline {FOO-BAR} at (0,0) size 20x18
+        RenderInline {SPAN} at (0,0) size 20x18
           RenderText {#text} at (320,0) size 20x18
             text run at (320,0) width 20: "hi"

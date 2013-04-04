@@ -4,9 +4,7 @@ layer at (0,0) size 800x600
 layer at (0,0) size 800x34
   RenderBlock {HTML} at (0,0) size 800x34
     RenderBody {BODY} at (8,8) size 784x18
-      RenderInline {X-LIST} at (0,0) size 30x18
-        RenderText {#text} at (0,0) size 0x0
-        RenderText {#text} at (0,0) size 0x0
+      RenderBlock {DIV} at (0,0) size 784x18
         RenderInline {SPAN} at (0,0) size 10x18
           RenderText {#text} at (0,0) size 10x18
             text run at (0,0) width 10: "a"
@@ -18,5 +16,3 @@ layer at (0,0) size 800x34
             text run at (20,0) width 10: "b"
         RenderText {#text} at (0,0) size 0x0
         RenderText {#text} at (0,0) size 0x0
-      RenderText {#text} at (0,0) size 0x0
-      RenderText {#text} at (0,0) size 0x0

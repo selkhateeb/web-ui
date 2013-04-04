@@ -8,7 +8,7 @@ layer at (0,0) size 800x220
         RenderText {#text} at (0,0) size 760x36
           text run at (0,0) width 760: "This test has three loops, each over two items, for a total of six different"
           text run at (0,18) width 180: "greeting messages:"
-      RenderBlock {X-GREETER} at (0,52) size 784x18
+      RenderBlock {DIV} at (0,52) size 784x18
         RenderText {#text} at (0,0) size 50x18
           text run at (0,0) width 50: "hello"
         RenderText {#text} at (50,0) size 20x18
@@ -17,7 +17,7 @@ layer at (0,0) size 800x220
           text run at (70,0) width 50: "world"
         RenderText {#text} at (120,0) size 20x18
           text run at (120,0) width 20: "??"
-      RenderBlock {X-GREETER} at (0,70) size 784x18
+      RenderBlock {DIV} at (0,70) size 784x18
         RenderText {#text} at (0,0) size 50x18
           text run at (0,0) width 50: "hello"
         RenderText {#text} at (50,0) size 20x18
@@ -26,7 +26,7 @@ layer at (0,0) size 800x220
           text run at (70,0) width 50: "world"
         RenderText {#text} at (120,0) size 20x18
           text run at (120,0) width 20: "!!"
-      RenderBlock {X-GREETER} at (0,88) size 784x18
+      RenderBlock {DIV} at (0,88) size 784x18
         RenderText {#text} at (0,0) size 50x18
           text run at (0,0) width 50: "hello"
         RenderText {#text} at (50,0) size 20x18
@@ -35,7 +35,7 @@ layer at (0,0) size 800x220
           text run at (70,0) width 80: "universe"
         RenderText {#text} at (150,0) size 20x18
           text run at (150,0) width 20: "??"
-      RenderBlock {X-GREETER} at (0,106) size 784x18
+      RenderBlock {DIV} at (0,106) size 784x18
         RenderText {#text} at (0,0) size 50x18
           text run at (0,0) width 50: "hello"
         RenderText {#text} at (50,0) size 20x18
@@ -44,7 +44,7 @@ layer at (0,0) size 800x220
           text run at (70,0) width 80: "universe"
         RenderText {#text} at (150,0) size 20x18
           text run at (150,0) width 20: "!!"
-      RenderBlock {X-GREETER} at (0,124) size 784x18
+      RenderBlock {DIV} at (0,124) size 784x18
         RenderText {#text} at (0,0) size 20x18
           text run at (0,0) width 20: "hi"
         RenderText {#text} at (20,0) size 20x18
@@ -53,7 +53,7 @@ layer at (0,0) size 800x220
           text run at (40,0) width 50: "world"
         RenderText {#text} at (90,0) size 20x18
           text run at (90,0) width 20: "??"
-      RenderBlock {X-GREETER} at (0,142) size 784x18
+      RenderBlock {DIV} at (0,142) size 784x18
         RenderText {#text} at (0,0) size 20x18
           text run at (0,0) width 20: "hi"
         RenderText {#text} at (20,0) size 20x18
@@ -62,7 +62,7 @@ layer at (0,0) size 800x220
           text run at (40,0) width 50: "world"
         RenderText {#text} at (90,0) size 20x18
           text run at (90,0) width 20: "!!"
-      RenderBlock {X-GREETER} at (0,160) size 784x18
+      RenderBlock {DIV} at (0,160) size 784x18
         RenderText {#text} at (0,0) size 20x18
           text run at (0,0) width 20: "hi"
         RenderText {#text} at (20,0) size 20x18
@@ -71,7 +71,7 @@ layer at (0,0) size 800x220
           text run at (40,0) width 80: "universe"
         RenderText {#text} at (120,0) size 20x18
           text run at (120,0) width 20: "??"
-      RenderBlock {X-GREETER} at (0,178) size 784x18
+      RenderBlock {DIV} at (0,178) size 784x18
         RenderText {#text} at (0,0) size 20x18
           text run at (0,0) width 20: "hi"
         RenderText {#text} at (20,0) size 20x18

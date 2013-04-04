@@ -55,7 +55,9 @@ main() {
   addGroup('utils_test.dart', utils_test.main);
   addGroup('watcher_test.dart', watcher_test.main);
 
-  renderTests('data/input', 'data/input', 'data/expected', 'data/output');
+  // Note: if you're adding more render test suites, make sure to update run.sh
+  // as well for convenient baseline diff/updating.
+  renderTests('data/input', 'data/input', 'data/expected', 'data/out');
   exampleTest('../example/component/news');
   exampleTest('../example/todomvc');
 }

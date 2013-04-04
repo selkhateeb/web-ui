@@ -1,4 +1,4 @@
-// Copyright (c) 2012, the Dart project authors.  Please see the AUTHORS file
+// Copyright (c) 2013, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
@@ -566,7 +566,8 @@ main() {
       });
 
       var fileInfo = analyzeFiles(files);
-      var bar = fileInfo['index.html'].query('x-bar');
+      var bar = fileInfo['index.html'].query('span');
+      expect(bar.node.attributes['is'], 'x-bar');
       expect(bar.attributes.keys, ['quux']);
       expect(bar.attributes['quux'].customTwoWayBinding, false);
       expect(bar.attributes['quux'].boundValue, '123');
@@ -582,7 +583,8 @@ main() {
       });
 
       var fileInfo = analyzeFiles(files)['index.html'];
-      var bar = fileInfo.query('x-bar');
+      var bar = fileInfo.query('span');
+      expect(bar.node.attributes['is'], 'x-bar');
       expect(bar.component, same(fileInfo.declaredComponents[0]));
       expect(bar.attributes.keys, ['quux']);
       expect(bar.attributes['quux'].customTwoWayBinding, true);
@@ -861,7 +863,9 @@ main() {
       analyzeFile(srcFile, { 'main.html': info }, new IntIterator(),
           messages);
       expect(info.components.keys, equals(['x-foo']));
-      expect(info.query('x-foo').component, equals(info.declaredComponents[0]));
+      var foo = info.query('span');
+      expect(foo.node.attributes['is'], 'x-foo');
+      expect(foo.component, equals(info.declaredComponents[0]));
     });
 
     test('binds components from another file', () {
@@ -876,7 +880,9 @@ main() {
       expect(info.declaredComponents.length, isZero);
       expect(info.components.keys, equals(['x-foo']));
       var compInfo = fileInfo['foo.html'].declaredComponents[0];
-      _compareSummary(info.query('x-foo').component, compInfo);
+      var foo = info.query('span');
+      expect(foo.node.attributes['is'], 'x-foo');
+      _compareSummary(foo.component, compInfo);
     });
 
     test('ignores elements with multiple definitions', () {
@@ -918,7 +924,9 @@ main() {
       expect(info.components.keys, equals(['x-foo']));
 
       var compInfo = fileInfo['foo.html'].declaredComponents[0];
-      _compareSummary(info.query('x-foo').component, compInfo);
+      var foo = info.query('span');
+      expect(foo.node.attributes['is'], 'x-foo');
+      _compareSummary(foo.component, compInfo);
     });
 
     test('element imports are not transitive', () {
@@ -989,9 +997,13 @@ main() {
       expect(info.components.keys, equals(['x-bar', 'x-foo']));
 
       var compInfo = fileInfo['foo.html'].declaredComponents[0];
-      _compareSummary(info.query('x-foo').component, compInfo);
+      var foo = info.query('span');
+      var bar = foo.children[0];
+      expect(foo.node.attributes['is'], 'x-foo');
+      expect(bar.node.attributes['is'], 'x-bar');
+      _compareSummary(foo.component, compInfo);
       compInfo = fileInfo['bar.html'].declaredComponents[0];
-      _compareSummary(info.query('x-bar').component, compInfo);
+      _compareSummary(bar.component, compInfo);
     });
 
     test('parse stylesheets', () {

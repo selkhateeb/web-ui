@@ -1,4 +1,4 @@
-// Copyright (c) 2012, the Dart project authors.  Please see the AUTHORS file
+// Copyright (c) 2013, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
@@ -117,7 +117,7 @@ class _Analyzer extends TreeVisitor {
       // <element> tags are tracked in the file's declared components, so they
       // don't need a parent.
       var parent = node.tagName == 'element' ? null : _parent;
-      info = new ElementInfo(node, parent);
+      info = _createElementInfo(node, parent);
     }
 
     visitElementInfo(info);
@@ -135,8 +135,6 @@ class _Analyzer extends TreeVisitor {
       info.isRoot = true;
       info.identifier = '_root';
     }
-
-    _bindCustomElement(node, info);
 
     var lastInfo = _currentInfo;
     if (node.tagName == 'element') {
@@ -232,7 +230,31 @@ class _Analyzer extends TreeVisitor {
     component.findClassDeclaration(_messages);
   }
 
-  void _bindCustomElement(Element node, ElementInfo info) {
+  ElementInfo _createElementInfo(Element node, ElementInfo parent) {
+    var component = _bindCustomElement(node);
+    if (component != null && node.attributes['is'] == null) {
+      // We need to ensure the correct DOM element is created in the tree.
+      // Until we get document.register and the browser's HTML parser can do
+      // the right thing for us, we switch to the is="tag-name" form.
+
+      // TODO(jmesserly): it's a shame we mutate the tree here instead of
+      // html_cleaner, but that would require mutating the node field of info,
+      // and risk references to the original node leaking into other objects,
+      // which seems worse.
+      var newNode = new Element.tag(component.baseExtendsTag);
+      newNode.attributes['is'] = node.tagName;
+      node.attributes.forEach((k, v) {
+        newNode.attributes[k] = v;
+      });
+      newNode.nodes.addAll(node.nodes);
+      node.replaceWith(newNode);
+      node = newNode;
+    }
+
+    return new ElementInfo(node, parent, component);
+  }
+
+  ComponentSummary _bindCustomElement(Element node) {
     // <fancy-button>
     var component = _fileInfo.components[node.tagName];
     if (component == null) {
@@ -251,11 +273,11 @@ class _Analyzer extends TreeVisitor {
             node.sourceSpan);
       }
     }
-
     if (component != null && !component.hasConflict) {
-      info.component = component;
       _currentInfo.usedComponents[component] = true;
+      return component;
     }
+    return null;
   }
 
   TemplateInfo _createTemplateInfo(Element node) {
@@ -317,7 +339,6 @@ class _Analyzer extends TreeVisitor {
 
       result.removeAttributes.add('template');
 
-
       // TODO(jmesserly): if-conditions in attributes require injecting a
       // placeholder node, and a real node which is a clone. We should
       // consider a design where we show/hide the node instead (with care
@@ -331,7 +352,7 @@ class _Analyzer extends TreeVisitor {
 
       // Create a new ElementInfo that is a child of "result" -- the
       // placeholder node. This will become result.contentInfo.
-      visitElementInfo(new ElementInfo(contentNode, result));
+      visitElementInfo(_createElementInfo(contentNode, result));
       return result;
     } else if (iterate != null) {
       var match = new RegExp(r"(.*) in (.*)").firstMatch(iterate);
