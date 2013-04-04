@@ -414,6 +414,11 @@ class _Analyzer extends TreeVisitor {
       return;
     }
 
+    if (name == 'on-key-down' || name == 'on-key-up' ||
+        name == 'on-key-press') {
+      value = '\$event = new KeyEvent(\$event); $value';
+    }
+
     _addEvent(info, toCamelCase(name), (elem) => value);
     info.removeAttributes.add(name);
   }
