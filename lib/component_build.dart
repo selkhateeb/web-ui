@@ -20,6 +20,7 @@ library build_utils;
 
 import 'dart:async';
 import 'dart:io';
+import 'dart:json' as json;
 import 'package:args/args.dart';
 
 import 'dwc.dart' as dwc;
@@ -74,7 +75,10 @@ Future<List<dwc.CompilerResult>> build(List<String> arguments,
           // Print for the Dart Editor the mapping from the input entry point
           // file and its corresponding output.
           var out = path.join(outDir, path.basename(file));
-          print('[{"method":"mapping","params":{"from":"$file","to":"$out"}}]');
+          print(json.stringify([{
+            "method": "mapping",
+            "params": {"from": file, "to": out},
+          }]));
         }
       }
     }
