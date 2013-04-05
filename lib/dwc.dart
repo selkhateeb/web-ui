@@ -28,13 +28,13 @@ void main() {
 /** Contains the result of a compiler run. */
 class CompilerResult {
   final bool success;
-  
+
   /** Map of output path to source, if there is one */
   final Map<String, String> outputs;
-  
+
   /** List of files read during compilation */
   final List<String> inputs;
-  
+
   final List<String> messages;
   String bootstrapFile;
 

@@ -195,6 +195,32 @@ class UriVisitor extends Visitor {
   UriVisitor._internal(this._pathToOriginalCss);
 
   void visitUriTerm(UriTerm node) {
-    node.text = path.join(_pathToOriginalCss, node.text);
+    node.text = PathMapper.toUrl(
+        path.normalize(path.join(_pathToOriginalCss, node.text)));
+  }
+}
+
+/**
+ * Find any imports in the style sheet; normalize the style sheet href and
+ * return a list of all fully qualified CSS files.
+ */
+class CssImports extends Visitor {
+  final String packageRoot;
+  final FileInfo fileInfo;
+
+  /** List of all imported style sheets. */
+  final List<UrlInfo> urlInfos = [];
+
+  CssImports(this.packageRoot, this.fileInfo);
+
+  void visitTree(StyleSheet tree) {
+    visitStyleSheet(tree);
+  }
+
+  void visitImportDirective(ImportDirective node) {
+    var urlInfo = UrlInfo.resolve(packageRoot, fileInfo.inputPath, node.import,
+        node.span, isCss: true);
+    if (urlInfo == null) return;
+    urlInfos.add(urlInfo);
   }
 }

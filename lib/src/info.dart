@@ -9,6 +9,7 @@
 library web_ui.src.info;
 
 import 'dart:collection' show SplayTreeMap, LinkedHashMap;
+import 'dart:uri' show Uri;
 
 import 'package:analyzer_experimental/src/generated/ast.dart';
 import 'package:csslib/parser.dart' as css;
@@ -580,7 +581,7 @@ typedef String ActionDefinition(String elemVarName);
 
 /**
  * Find ElementInfo that associated with a particular DOM node.
- * Used by [ElementInfo.query].
+ * Used by `ElementInfo.query(tagName)`.
  */
 class _QueryInfo extends InfoVisitor {
   final String _tagName;
@@ -617,4 +618,29 @@ class UrlInfo {
   final Span sourceSpan;
 
   UrlInfo(this.resolvedPath, this.sourceSpan);
+
+  /** Resolve a path from an [href] found in [filePath]. */
+  static UrlInfo resolve(String packageRoot,
+                         String filePath,
+                         String href,
+                         Span span,
+                         {bool isCss: false}) {
+    if (isCss) {
+      var uri = Uri.parse(href);
+      if (uri.domain != '') return null;
+      if (uri.scheme != '' && uri.scheme != 'package') return null;
+    }
+
+    var hrefTarget;
+    if (href.startsWith('package:')) {
+      hrefTarget = path.join(packageRoot, href.substring(8));
+    } else if (path.isAbsolute(href)) {
+      hrefTarget = href;
+    } else {
+      hrefTarget = path.join(path.dirname(filePath), href);
+    }
+    hrefTarget = path.normalize(hrefTarget);
+
+    return new UrlInfo(hrefTarget, span);
+  }
 }

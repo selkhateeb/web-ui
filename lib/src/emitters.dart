@@ -643,8 +643,7 @@ void emitImports(DartCodeInfo codeInfo, LibraryInfo info, PathMapper pathMapper,
 
   if (info is ComponentInfo) {
     // Inject an import to the base component.
-    ComponentInfo component = info;
-    var base = info.extendsComponent;
+    var base = (info as ComponentInfo).extendsComponent;
     if (base != null) {
       addUnique("import '${pathMapper.relativeUrl(info, base)}';");
     }

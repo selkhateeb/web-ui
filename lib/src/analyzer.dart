@@ -8,7 +8,6 @@
  */
 library analyzer;
 
-import 'dart:uri';
 import 'package:html5lib/dom.dart';
 import 'package:html5lib/dom_parsing.dart';
 import 'package:source_maps/span.dart';
@@ -779,26 +778,14 @@ class _ElementLoader extends TreeVisitor {
       return;
     }
 
-    if (rel == 'stylesheet') {
-      var uri = Uri.parse(href);
-      if (uri.domain != '') return;
-      if (uri.scheme != '' && uri.scheme != 'package') return;
-    }
-
-    var hrefTarget;
-    if (href.startsWith('package:')) {
-      hrefTarget = path.join(_packageRoot, href.substring(8));
-    } else if (path.isAbsolute(href)) {
-      hrefTarget = href;
+    bool isStyleSheet = rel == 'stylesheet';
+    var urlInfo = UrlInfo.resolve(_packageRoot, _fileInfo.inputPath, href,
+        node.sourceSpan, isCss: isStyleSheet);
+    if (urlInfo == null) return;
+    if (isStyleSheet) {
+      _fileInfo.styleSheetHref.add(urlInfo);
     } else {
-      hrefTarget = path.join(path.dirname(_fileInfo.inputPath), href);
-    }
-    hrefTarget = path.normalize(hrefTarget);
-
-    if (rel == 'stylesheet') {
-      _fileInfo.styleSheetHref.add(new UrlInfo(hrefTarget, node.sourceSpan));
-    } else {
-      _fileInfo.componentLinks.add(new UrlInfo(hrefTarget, node.sourceSpan));
+      _fileInfo.componentLinks.add(urlInfo);
     }
   }
 

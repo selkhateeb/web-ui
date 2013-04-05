@@ -128,7 +128,7 @@ class PathMapper {
     var srcDir = path.dirname(src.dartCodePath);
     var relDir = path.relative(
         path.dirname(target.dartCodePath), from: srcDir);
-    return _toUrl(_rewritePackages(path.normalize(
+    return toUrl(_rewritePackages(path.normalize(
           path.join(relDir, target.outputFilename))));
   }
 
@@ -143,12 +143,12 @@ class PathMapper {
   String transformUrl(String src, String target) {
     if (new Uri.fromString(target).isAbsolute) return target;
     if (path.isAbsolute(target)) return target;
-    return _toUrl(path.normalize(path.relative(
+    return toUrl(path.normalize(path.relative(
           path.join(path.dirname(src), target), from: outputDirPath(src))));
   }
   
   /** Convert a OS specific path into a url. */
-  static String _toUrl(String relPath) =>
+  static String toUrl(String relPath) =>
     (path.separator == '/') ? relPath : path.split(relPath).join('/');
 }
 

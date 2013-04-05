@@ -9,7 +9,7 @@ import 'dart:collection' show SplayTreeMap;
 import 'dart:json' as json;
 import 'package:analyzer_experimental/src/generated/ast.dart' show Directive, UriBasedDirective;
 import 'package:csslib/parser.dart' as css;
-import 'package:csslib/visitor.dart' show InfoVisitor, StyleSheet, treeToDebugString;
+import 'package:csslib/visitor.dart' show StyleSheet, treeToDebugString, Visitor;
 import 'package:html5lib/dom.dart';
 import 'package:html5lib/parser.dart';
 import 'package:source_maps/span.dart' show Span;
@@ -303,7 +303,25 @@ class Compiler {
 
     var styleSheet = _parseCss(cssFile.code, cssFile.path, _messages, options);
     if (styleSheet != null) {
+      var urlInfos = _time('CSS imports', cssFile.path, () =>
+          (new CssImports(_pathMapper.packageRoot, fileInfo)
+              ..visitTree(styleSheet)).urlInfos);
+
       fileInfo.styleSheets.add(styleSheet);
+
+      for (var urlInfo in urlInfos) {
+        if (urlInfo == null) break;
+
+        fileInfo.styleSheetHref.add(urlInfo);
+
+        // Load any @imported stylesheet files referenced in this style sheet.
+        var url = urlInfo.resolvedPath;
+        if (!_processed.contains(url)) {
+          _processed.add(url);
+          _tasks.add(_parseStyleSheetFile(urlInfo)
+              .then(_processStyleSheetFile));
+        }
+      }
     }
   }
 

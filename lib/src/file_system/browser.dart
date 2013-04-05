@@ -63,12 +63,12 @@ class BrowserFileSystem implements fs.FileSystem {
   Future<String> _getString(String url) {
       var completer = new Completer<HttpRequest>();
       var xhr = new HttpRequest();
-      xhr.open('GET', url, true);
+      xhr.open('GET', url, async: true);
       xhr.withCredentials = false;
       xhr.onLoad.listen((e) {
         if (xhr.status == 0 ||
           (xhr.status >= 200 && xhr.status < 300) || xhr.status == 304 ) {
-          completer.complete(xhr.responseText);
+          completer.complete(xhr);
         } else {
           completer.completeError(xhr.status);
         }
