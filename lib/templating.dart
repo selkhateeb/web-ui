@@ -455,11 +455,22 @@ class Template extends TemplateItem {
     children.add(new ConditionalTemplate(template, exp, bodySetup));
   }
 
-  /** Watch [exp] and render a loop while this template is visible. */
-  void loop(Node template, exp, iterSetup, {isTemplateElement: true}) {
-    children.add(
-        isTemplateElement ?  new LoopTemplate(template, exp, iterSetup)
-        : new LoopTemplateInAttribute(template, exp, iterSetup));
+  /**
+   * Watch [exp] and render a loop while this template is visible.
+   * This is used by all "iterate" and "repeat" attributes, except those that
+   * require [loopIterateAttr].
+   */
+  void loop(Node template, exp, iterSetup) {
+    children.add(new LoopTemplate(template, exp, iterSetup));
+  }
+
+  /**
+   * Watch [exp] and render a loop while this template is visible.
+   * This is used by:
+   *     <td template iterate="x in list">
+   */
+  void loopIterateAttr(Node template, exp, iterSetup) {
+    children.add(new LoopTemplateInAttribute(template, exp, iterSetup));
   }
 
   /** Bind the lifecycle of the component with this template's lifecycle. */
@@ -601,7 +612,10 @@ class ConditionalTemplate extends PlaceholderTemplate {
 /** Function to set up the contents of a loop template. */
 typedef void LoopIterationSetup(loopVariable, Template template);
 
-/** A template loop of the form `<template iterate="x in list ">`. */
+/**
+ * A template loop of the form `<template iterate="x in list ">` or
+ * `<td template repeat="x in list">`.
+ */
 class LoopTemplate extends PlaceholderTemplate {
   final LoopIterationSetup iterSetup;
 

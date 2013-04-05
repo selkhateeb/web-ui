@@ -432,21 +432,21 @@ main() {
     test('template if (empty)', () {
       var elem = parseSubtree('<template if="foo"></template>');
       var info = analyzeElement(elem);
-      expect(info.hasIfCondition, false);
+      expect(info.hasCondition, false);
     });
 
     test('template if', () {
       var elem = parseSubtree('<template if="foo"><div>');
       var div = elem.query('div');
       TemplateInfo info = analyzeElement(elem);
-      expect(info.hasIfCondition, true);
+      expect(info.hasCondition, true);
       expect(info.createdInCode, false);
       expect(info.children[0].node, equals(div));
       expect(info.children[0].createdInCode, true);
       expect(div.id, '');
       expect(elem.attributes, equals({'if': 'foo'}));
       expect(info.ifCondition, equals('foo'));
-      expect(info.hasIterate, isFalse);
+      expect(info.hasLoop, isFalse);
       expect(messages.length, 0);
     });
 
@@ -454,14 +454,14 @@ main() {
       var elem = parseSubtree('<template instantiate="if foo"><div>');
       var div = elem.query('div');
       TemplateInfo info = analyzeElement(elem);
-      expect(info.hasIfCondition, true);
+      expect(info.hasCondition, true);
       expect(info.createdInCode, false);
       expect(info.children[0].node, equals(div));
       expect(info.children[0].createdInCode, true);
       expect(div.id, '');
       expect(elem.attributes, equals({'instantiate': 'if foo'}));
       expect(info.ifCondition, equals('foo'));
-      expect(info.hasIterate, isFalse);
+      expect(info.hasLoop, isFalse);
       expect(messages.length, 0);
     });
 

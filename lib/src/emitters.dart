@@ -90,7 +90,7 @@ void emitInitializations(ElementInfo info,
 
   printer.add(childrenPrinter);
 
-  if (info.childrenCreatedInCode && !info.hasIterate && !info.hasIfCondition) {
+  if (info.childrenCreatedInCode && !info.hasLoop && !info.hasCondition) {
     _emitAddNodes(printer, context.statics, info.children, '$id.nodes');
   }
 }
@@ -334,21 +334,25 @@ void emitConditional(TemplateInfo info, CodePrinter printer,
 
 /**
  * Emits code for template lists like `<template iterate='item in items'>` or
- * `<td template iterate='item in items'>`.
+ * `<td template repeat='item in items'>`.
  */
 void emitLoop(TemplateInfo info, CodePrinter printer, Context childContext) {
   var id = info.identifier;
   var items = info.loopItems;
   var loopVar = info.loopVariable;
-  printer..addLine('__t.loop($id, () => $items, ($loopVar, __t) {',
+
+  var suffix = '';
+  // TODO(jmesserly): remove this functionality after a grace period.
+  if (!info.isTemplateElement && !info.isRepeat) suffix = 'IterateAttr';
+
+  printer..addLine('__t.loop$suffix($id, () => $items, ($loopVar, __t) {',
                    span: info.node.sourceSpan)
       ..indent += 1
       ..add(childContext.declarations)
       ..add(childContext.printer)
       ..indent -= 1;
   _emitAddNodes(printer, childContext.statics, info.children, '__t');
-  printer..addLine(info.isTemplateElement
-      ? '});' : '}, isTemplateElement: false);');
+  printer.addLine('});');
 }
 
 
@@ -383,10 +387,10 @@ class RecursiveEmitter extends InfoVisitor {
     emitComponentCreation(info, _context.printer);
 
     var childContext = null;
-    if (info.hasIfCondition) {
+    if (info.hasCondition) {
       childContext = new Context(statics: _context.statics, indent: indent + 1);
       emitConditional(info, _context.printer, childContext);
-    } else if (info.hasIterate) {
+    } else if (info.hasLoop) {
       childContext = new Context(statics: _context.statics, indent: indent + 1);
       emitLoop(info, _context.printer, childContext);
     } else {
