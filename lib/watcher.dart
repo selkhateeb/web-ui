@@ -110,6 +110,8 @@ ChangeUnobserver watch(target, ChangeObserver callback, [String debugName]) {
       } else if (val is Iterable) {
         watcherType = _WatcherType.LIST;
         exp = () => target().toList();
+      } else if (val is Map) {
+        watcherType = _WatcherType.MAP;
       }
     } catch (e, trace) { // in case target() throws some error
       // TODO(sigmund): use logging instead of print when logger is in the SDK
