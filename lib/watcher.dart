@@ -135,6 +135,10 @@ ChangeUnobserver watch(target, ChangeObserver callback, [String debugName]) {
   return node.remove;
 }
 
+/**
+ * Creates a watcher for [exp] of [type] with [callback] function and
+ * [debugName].
+ */
 _Watcher _createWatcher(_WatcherType type, Function exp,
                         ChangeObserver callback, String debugName) {
   switch(type) {
@@ -348,6 +352,9 @@ class _MapWatcher<K, V> extends _Watcher {
   }
 }
 
+/**
+ * Enum used to differentiate watcher type.
+ */
 class _WatcherType {
   final _value;
   const _WatcherType._internal(this._value);
