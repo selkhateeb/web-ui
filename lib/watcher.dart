@@ -98,7 +98,7 @@ ChangeUnobserver watch(target, ChangeObserver callback, [String debugName]) {
   if (callback == null) return () {}; // no use in passing null as a callback.
   if (_watchers == null) _watchers = new LinkedList<_Watcher>();
   Function exp;
-  bool isList = false;
+  _WatcherType watcherType = _WatcherType.OTHER;
   if (target is Handle) {
     exp = (target as Handle)._getter;
   } else if (target is Function) {
@@ -106,9 +106,9 @@ ChangeUnobserver watch(target, ChangeObserver callback, [String debugName]) {
     try {
       var val = target();
       if (val is List) {
-        isList = true;
+        watcherType = _WatcherType.LIST;
       } else if (val is Iterable) {
-        isList = true;
+        watcherType = _WatcherType.LIST;
         exp = () => target().toList();
       }
     } catch (e, trace) { // in case target() throws some error
@@ -119,16 +119,30 @@ ChangeUnobserver watch(target, ChangeObserver callback, [String debugName]) {
     }
   } else if (target is List) {
     exp = () => target;
-    isList = true;
+    watcherType = _WatcherType.LIST;
   } else if (target is Iterable) {
     exp = () => target.toList();
-    isList = true;
+    watcherType = _WatcherType.LIST;
+  } else if (target is Map) {
+    exp = () => target;
+    watcherType = _WatcherType.MAP;
   }
-  var watcher = isList
-      ? new _ListWatcher(exp, callback, debugName)
-      : new _Watcher(exp, callback, debugName);
+
+  var watcher = _createWatcher(watcherType, exp, callback, debugName);
   var node = _watchers.add(watcher);
   return node.remove;
+}
+
+_Watcher _createWatcher(_WatcherType type, Function exp,
+                        ChangeObserver callback, String debugName) {
+  switch(type) {
+    case _WatcherType.LIST:
+      return new _ListWatcher(exp, callback, debugName);
+    case _WatcherType.MAP:
+      return new _MapWatcher(exp, callback, debugName);
+    default:
+      return new _Watcher(exp, callback, debugName);
+  }
 }
 
 /**
@@ -305,4 +319,39 @@ class _ListWatcher<T> extends _Watcher {
   void _update(currentValue) {
     _lastValue = new List<T>.from(currentValue);
   }
+}
+
+/**
+ * A watcher for map objects. It stores as the last value a shallow copy of the
+ * map as it was when we last detected any changes.
+ */
+class _MapWatcher<K, V> extends _Watcher {
+
+  _MapWatcher(getter, ChangeObserver callback, String debugName)
+      : super(getter, callback, debugName) {
+    _update(_safeRead());
+  }
+
+  bool _compare(Map<K, V> currentValue) {
+    if (_lastValue.length != currentValue.length) return true;
+
+    for (K key in _lastValue.keys) {
+      if (_lastValue[key] != currentValue[key]) return true;
+    }
+    return false;
+  }
+
+  void _update(currentValue) {
+    _lastValue = new Map<K, V>.from(currentValue);
+  }
+}
+
+class _WatcherType {
+  final _value;
+  const _WatcherType._internal(this._value);
+  toString() => 'Enum.$_value';
+
+  static const LIST = const _WatcherType._internal('LIST');
+  static const MAP = const _WatcherType._internal('MAP');
+  static const OTHER = const _WatcherType._internal('OTHER');
 }
