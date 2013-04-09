@@ -23,14 +23,11 @@ final ViewModel viewModel = new ViewModel();
 
 @observable
 class AppModel {
-  ObservableList<Todo> todos = new ObservableList<Todo>();
+  final ObservableList<Todo> todos = new ObservableList<Todo>();
 
   // TODO(jmesserly): remove this once List has a remove method.
   void removeTodo(Todo todo) {
-    var index = todos.indexOf(todo);
-    if (index != -1) {
-      todos.removeRange(index, 1);
-    }
+    todos.removeWhere((v) => v == todo);
   }
 
   bool get allChecked => todos.length > 0 && todos.every((t) => t.done);
@@ -46,8 +43,7 @@ class AppModel {
   int get remaining => todos.length - doneCount;
 
   void clearDone() {
-    // TODO(jmesserly): should methods on ObservableList return Observables?
-    todos = toObservable(todos.where((t) => !t.done));
+    todos.removeWhere((t) => t.done);
   }
 }
 
