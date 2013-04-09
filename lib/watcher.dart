@@ -339,16 +339,31 @@ class _MapWatcher<K, V> extends _Watcher {
   }
 
   bool _compare(Map<K, V> currentValue) {
-    if (_lastValue.length != currentValue.length) return true;
+    Iterable<K> keys = _lastValue.keys;
+    Iterable<K> newKeys = currentValue.keys;
+    if (keys.length != newKeys.length) return true;
 
-    for (K key in _lastValue.keys) {
+    for (int i = 0; i <= keys.length; i++) {
+      K key = keys[i];
+      // SplayTreeMap and LinkedHashMap key order matters. Since SplayTreeMap
+      // is always saved as a LinkedHashMap use this as indicator that order
+      //  matters.
+      if ((_lastValue is LinkedHashMap) && (key != newKeys[i])) return true;
       if (_lastValue[key] != currentValue[key]) return true;
     }
     return false;
   }
 
   void _update(currentValue) {
-    _lastValue = new Map<K, V>.from(currentValue);
+    if (value is LinkedHashMap) {
+      _lastValue = new LinkedHashMap.from(currentValue);
+    } else if (value is SplayTreeMap) {
+      // Cannot clone the SplayTreeMap. Since the copied values do not change
+      // cloning the map into a LinkedHashMap will preserve the sorted order.
+      _lastValue = new LinkedHashMap.from(currentValue);
+    } else if (value is Map) {
+      _lastValue = new Map<K, V>.from(currentValue);
+    }
   }
 }
 
