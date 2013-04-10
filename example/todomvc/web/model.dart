@@ -25,26 +25,16 @@ final ViewModel viewModel = new ViewModel();
 class AppModel {
   final ObservableList<Todo> todos = new ObservableList<Todo>();
 
-  // TODO(jmesserly): remove this once List has a remove method.
-  void removeTodo(Todo todo) {
-    todos.removeWhere((v) => v == todo);
-  }
-
   bool get allChecked => todos.length > 0 && todos.every((t) => t.done);
 
   set allChecked(bool value) => todos.forEach((t) { t.done = value; });
 
-  int get doneCount {
-    int res = 0;
-    todos.forEach((t) { if (t.done) res++; });
-    return res;
-  }
+  int get doneCount =>
+      todos.fold(0, (count, t) => count + (t.done ? 1 : 0));
 
   int get remaining => todos.length - doneCount;
 
-  void clearDone() {
-    todos.removeWhere((t) => t.done);
-  }
+  void clearDone() => todos.removeWhere((t) => t.done);
 }
 
 final AppModel app = new AppModel();
