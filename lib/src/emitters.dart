@@ -345,9 +345,10 @@ void emitLoop(TemplateInfo info, CodePrinter printer, Context childContext) {
   // TODO(jmesserly): remove this functionality after a grace period.
   if (!info.isTemplateElement && !info.isRepeat) suffix = 'IterateAttr';
 
-  printer..addLine('__t.loop$suffix($id, () => $items, ($loopVar, __t) {',
-                   span: info.node.sourceSpan)
+  printer..addLine('__t.loop$suffix($id, () => $items, '
+          '(\$list, \$index, __t) {', span: info.node.sourceSpan)
       ..indent += 1
+      ..addLine('var $loopVar = \$list[\$index];')
       ..add(childContext.declarations)
       ..add(childContext.printer)
       ..indent -= 1;
