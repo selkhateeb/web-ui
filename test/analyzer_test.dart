@@ -139,14 +139,14 @@ main() {
     test('bind-value-as-date', () {
       var input = '<input bind-value-as-date="x">';
       var info = analyzeElement(parseSubtree(input));
-      expect(info.attributes.keys, ['valueAsDate']);
+      expect(info.attributes.keys, ['value-as-date']);
       expect(messages.length, 0);
     });
 
     test('bind-value-as-number', () {
       var input = '<input bind-value-as-number="x">';
       var info = analyzeElement(parseSubtree(input));
-      expect(info.attributes.keys, ['valueAsNumber']);
+      expect(info.attributes.keys, ['value-as-number']);
       expect(messages.length, 0);
     });
 
@@ -269,10 +269,10 @@ main() {
     test('attribute - 2 way binding select', () {
       var input = '<select bind-selected-index="x" bind-value="y">';
       var info = analyzeElement(parseSubtree(input));
-      expect(info.attributes.keys, equals(['selectedIndex', 'value']));
-      expect(info.attributes['selectedIndex'], isNotNull);
-      expect(info.attributes['selectedIndex'].isSimple, true);
-      expect(info.attributes['selectedIndex'].bindings.map((b) => b.exp),
+      expect(info.attributes.keys, equals(['selected-index', 'value']));
+      expect(info.attributes['selected-index'], isNotNull);
+      expect(info.attributes['selected-index'].isSimple, true);
+      expect(info.attributes['selected-index'].bindings.map((b) => b.exp),
           equals(['x']));
       expect(info.attributes['value'], isNotNull);
       expect(info.attributes['value'].isSimple, true);

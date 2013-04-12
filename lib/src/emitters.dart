@@ -16,7 +16,6 @@ import 'package:source_maps/span.dart' show Span, FileLocation;
 import 'code_printer.dart';
 import 'codegen.dart' as codegen;
 import 'dart_parser.dart' show DartCodeInfo;
-import 'html5_setters.g.dart';
 import 'html5_utils.dart';
 import 'html_css_fixup.dart';
 import 'info.dart';
@@ -229,7 +228,7 @@ void _emitSimpleAttributeBinding(ElementInfo info,
   var node = info.identifier;
   var binding = attr.boundValue;
   var isFinal = attr.isBindingFinal;
-  var field = _findDomField(info, name);
+  var field = findDomField(info, name);
   var isUrl = urlAttributes.contains(name);
   printer.addLine('__t.oneWayBind(() => $binding, '
         '(e) { if ($node.$field != e) $node.$field = e; }, $isFinal, $isUrl);',
@@ -243,7 +242,7 @@ void _emitSimpleAttributeBinding(ElementInfo info,
 void _emitTextAttributeBinding(ElementInfo info,
     String name, AttributeInfo attr, CodePrinter printer) {
   var textContent = attr.textContent.map(escapeDartString).toList();
-  var setter = _findDomField(info, name);
+  var setter = findDomField(info, name);
   var content = new StringBuffer();
   var binding;
   var isFinal;
@@ -708,30 +707,6 @@ String _emitCreateHtml(Node node, Declarations statics) {
   var varName = '__html${statics.declarations.length}';
   statics.add('final', varName, node.sourceSpan, expr);
   return '${varName}.clone(true)';
-}
-
-/**
- * Finds the correct expression to set an HTML attribute through the DOM.
- * It is important for correctness to use the DOM setter if it is available.
- * Otherwise changes will not be applied. This is most easily observed with
- * "InputElement.value", ".checked", etc.
- */
-String _findDomField(ElementInfo info, String name) {
-  var typeName = typeForHtmlTag(info.baseTagName);
-  while (typeName != null) {
-    var fields = htmlElementFields[typeName];
-    if (fields != null) {
-      var field = fields[name];
-      if (field != null) return field;
-    }
-    typeName = htmlElementExtends[typeName];
-  }
-  // If we didn't find a DOM setter, and this is a component, set a property on
-  // the component.
-  if (info.component != null && !name.startsWith('data-')) {
-    return 'xtag.${toCamelCase(name)}';
-  }
-  return "attributes['$name']";
 }
 
 /** Trim down the html for the main html page. */
