@@ -282,7 +282,7 @@ abstract class WebComponent implements Element {
 
   List<Node> get nodes => host.nodes;
 
-  set nodes(Collection<Node> value) { host.nodes = value; }
+  set nodes(Iterable<Node> value) { host.nodes = value; }
 
   /**
    * Replaces this node with another node.
@@ -321,19 +321,19 @@ abstract class WebComponent implements Element {
 
   List<Element> get elements => host.children;
 
-  set elements(Collection<Element> value) {
+  set elements(List<Element> value) {
     host.children = value;
   }
 
   List<Element> get children => host.children;
 
-  set children(Collection<Element> value) {
+  set children(List<Element> value) {
     host.children = value;
   }
 
   Set<String> get classes => host.classes;
 
-  set classes(Collection<String> value) {
+  set classes(Iterable<String> value) {
     host.classes = value;
   }
 
@@ -560,7 +560,7 @@ abstract class WebComponent implements Element {
 
   Node get $dom_lastChild => host.$dom_lastChild;
 
-  String get $dom_localName => host.$dom_localName;
+  String get localName => host.localName;
 
   String get $dom_namespaceUri => host.$dom_namespaceUri;
 

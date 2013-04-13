@@ -10,7 +10,7 @@ library analyzer;
 
 import 'package:html5lib/dom.dart';
 import 'package:html5lib/dom_parsing.dart';
-import 'package:source_maps/span.dart';
+import 'package:source_maps/span.dart' hide SourceFile;
 
 import 'dart_parser.dart';
 import 'files.dart';
