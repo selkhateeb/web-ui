@@ -336,8 +336,9 @@ class _ListWatcher<T> extends _Watcher {
 }
 
 /**
- * A watcher for map objects. It stores as the last value a shallow copy of the
- * map as it was when we last detected any changes.
+ * A watcher for hash map objects. It stores as the last value a shallow copy
+ * of the map as it was when we last detected any changes. Order for the map
+ * does not matter for equality.
  */
 class _HashMapWatcher<K, V> extends _Watcher {
 
@@ -364,6 +365,10 @@ class _HashMapWatcher<K, V> extends _Watcher {
   }
 }
 
+/**
+ * A watcher for maps where key order matters. It stores as the last value a
+ * shallow copy of the map as it was when we last detected any changes.
+ */
 class _OrderDependantMapWatcher<K, V> extends _Watcher {
 
   _OrderDependantMapWatcher(getter, ChangeObserver callback, String debugName)
@@ -381,6 +386,9 @@ class _OrderDependantMapWatcher<K, V> extends _Watcher {
   }
 }
 
+/**
+ * Helper function to determine whether two iterables are unequal.
+ */
 bool _iterablesNotEqual(Iterable first, Iterable second) {
   Iterator x = first.iterator;
   Iterator y = second.iterator;
