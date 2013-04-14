@@ -110,8 +110,10 @@ ChangeUnobserver watch(target, ChangeObserver callback, [String debugName]) {
       } else if (val is Iterable) {
         watcherType = _WatcherType.LIST;
         exp = () => target().toList();
+      } else if ((val is LinkedHashMap) || (val is SplayTreeMap)) {
+        watcherType = _WatcherType.ORDERED_MAP;
       } else if (val is Map) {
-        watcherType = _WatcherType.MAP;
+        watcherType = _WatcherType.HASH_MAP;
       }
     } catch (e, trace) { // in case target() throws some error
       // TODO(sigmund): use logging instead of print when logger is in the SDK
@@ -125,9 +127,12 @@ ChangeUnobserver watch(target, ChangeObserver callback, [String debugName]) {
   } else if (target is Iterable) {
     exp = () => target.toList();
     watcherType = _WatcherType.LIST;
+  } else if ((target is LinkedHashMap) || (target is SplayTreeMap)) {
+    exp = () => target;
+    watcherType = _WatcherType.ORDERED_MAP;
   } else if (target is Map) {
     exp = () => target;
-    watcherType = _WatcherType.MAP;
+    watcherType = _WatcherType.HASH_MAP;
   }
 
   var watcher = _createWatcher(watcherType, exp, callback, debugName);
@@ -144,8 +149,10 @@ _Watcher _createWatcher(_WatcherType type, Function exp,
   switch(type) {
     case _WatcherType.LIST:
       return new _ListWatcher(exp, callback, debugName);
-    case _WatcherType.MAP:
-      return new _MapWatcher(exp, callback, debugName);
+    case _WatcherType.ORDERED_MAP:
+      return new _OrderDependantMapWatcher(exp, callback, debugName);
+    case _WatcherType.HASH_MAP:
+      return new _HashMapWatcher(exp, callback, debugName);
     default:
       return new _Watcher(exp, callback, debugName);
   }
@@ -314,12 +321,7 @@ class _ListWatcher<T> extends _Watcher {
   }
 
   bool _compare(List<T> currentValue) {
-    if (_lastValue.length != currentValue.length) return true;
-
-    for (int i = 0 ; i < _lastValue.length; i++) {
-      if (_lastValue[i] != currentValue[i]) return true;
-    }
-    return false;
+    return _iterablesNotEqual(_lastValue, currentValue);
   }
 
   void _update(currentValue) {
@@ -331,40 +333,56 @@ class _ListWatcher<T> extends _Watcher {
  * A watcher for map objects. It stores as the last value a shallow copy of the
  * map as it was when we last detected any changes.
  */
-class _MapWatcher<K, V> extends _Watcher {
+class _HashMapWatcher<K, V> extends _Watcher {
 
-  _MapWatcher(getter, ChangeObserver callback, String debugName)
+  _HashMapWatcher(getter, ChangeObserver callback, String debugName)
       : super(getter, callback, debugName) {
     _update(_safeRead());
   }
 
   bool _compare(Map<K, V> currentValue) {
     Iterable<K> keys = _lastValue.keys;
-    Iterable<K> newKeys = currentValue.keys;
-    if (keys.length != newKeys.length) return true;
+    if (keys.length != currentValue.keys.length) return true;
 
-    for (int i = 0; i <= keys.length; i++) {
-      K key = keys[i];
-      // SplayTreeMap and LinkedHashMap key order matters. Since SplayTreeMap
-      // is always saved as a LinkedHashMap use this as indicator that order
-      //  matters.
-      if ((_lastValue is LinkedHashMap) && (key != newKeys[i])) return true;
+    Iterator<K> keyIterator = keys.iterator;
+    while (keyIterator.moveNext()) {
+      K key = keyIterator.current;
+      if (!currentValue.containsKey(key)) return true;
       if (_lastValue[key] != currentValue[key]) return true;
     }
     return false;
   }
 
   void _update(currentValue) {
-    if (value is LinkedHashMap) {
-      _lastValue = new LinkedHashMap.from(currentValue);
-    } else if (value is SplayTreeMap) {
-      // Cannot clone the SplayTreeMap. Since the copied values do not change
-      // cloning the map into a LinkedHashMap will preserve the sorted order.
-      _lastValue = new LinkedHashMap.from(currentValue);
-    } else if (value is Map) {
-      _lastValue = new Map<K, V>.from(currentValue);
-    }
+    _lastValue = new Map<K, V>.from(currentValue);
   }
+}
+
+class _OrderDependantMapWatcher<K, V> extends _Watcher {
+
+  _OrderDependantMapWatcher(getter, ChangeObserver callback, String debugName)
+      : super(getter, callback, debugName) {
+    _update(_safeRead());
+  }
+
+  bool _compare(Map<K, V> currentValue) {
+    return _iterablesNotEqual(currentValue.keys, _lastValue.keys) ||
+        _iterablesNotEqual(currentValue.values, _lastValue.values);
+  }
+
+  void _update(currentValue) {
+    _lastValue = new LinkedHashMap.from(currentValue);
+  }
+}
+
+bool _iterablesNotEqual(Iterable first, Iterable second) {
+  Iterator x = first.iterator;
+  Iterator y = second.iterator;
+  while (x.moveNext()) {
+    if (!y.moveNext()) return true; // x has more elements than y
+    if (x.current != y.current) return true;
+  }
+  return y.moveNext(); // y has more elements than x
 }
 
 /**
@@ -376,6 +394,7 @@ class _WatcherType {
   toString() => 'Enum.$_value';
 
   static const LIST = const _WatcherType._internal('LIST');
-  static const MAP = const _WatcherType._internal('MAP');
+  static const HASH_MAP = const _WatcherType._internal('HASH_MAP');
+  static const ORDERED_MAP = const _WatcherType._internal('ORDERED_MAP');
   static const OTHER = const _WatcherType._internal('OTHER');
 }

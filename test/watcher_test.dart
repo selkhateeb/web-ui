@@ -5,6 +5,7 @@
 /** Tests for the watcher library. */
 library watcher_test;
 
+import 'dart:collection';
 import 'package:unittest/compact_vm_config.dart';
 import 'package:unittest/unittest.dart';
 import 'package:web_ui/watcher.dart';
@@ -234,14 +235,14 @@ main() {
       stop();
     });
 
-    test('watch event shows old and new list values', () {
+    test('watch event shows old and new map values order dependant', () {
       var map = {"a" : 1, "b" : 2, "c" : 3};
       var before;
       var after;
       var stop = watchAndInvoke(map, expectAsync1((e) {
         before = e.oldValue;
         after = e.newValue;
-      }, count: 3));
+      }, count: 4));
       expect(before, isNull);
       expect(after, equals({"a" : 1, "b" : 2, "c" : 3}));
       map["b"] = 42;
@@ -252,6 +253,33 @@ main() {
       dispatch();
       expect(before, equals({"a" : 1, "b" : 42, "c" : 3}));
       expect(after, equals({"a" : 1, "b" : 42}));
+      map.remove("a");
+      map["a"] = 1;
+      dispatch();
+      // Order of keys matter.
+      expect(before, equals({"a" : 1, "b" : 42}));
+      expect(after, equals({"b" : 42, "a" : 1}));
+      stop();
+    });
+ 
+    test('watch event shows old and new map values order independant', () {
+      var map = new HashMap.from({"a" : 1, "b" : 2, "c" : 3});
+      var before;
+      var after;
+      var stop = watchAndInvoke(map, expectAsync1((e) {
+        before = e.oldValue;
+        after = e.newValue;
+      }, count: 2));
+      expect(before, isNull);
+      expect(after, equals(new HashMap.from({"a" : 1, "b" : 2, "c" : 3})));
+      map["b"] = 42;
+      dispatch();
+      expect(before, equals(new HashMap.from({"a" : 1, "b" : 2, "c" : 3})));
+      expect(after, equals(new HashMap.from({"a" : 1, "b" : 42, "c" : 3})));
+      map.remove("a");
+      map["a"] = 1;
+      dispatch();
+      // Order of keys don't matter.
       stop();
     });
   });
