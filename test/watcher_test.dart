@@ -261,6 +261,42 @@ main() {
       expect(after, equals({"b" : 42, "a" : 1}));
       stop();
     });
+
+    test('watch event differentiates null values order dependant', () {
+      var map = {"a" : 1, "b" : 2, "c" : null};
+      var before;
+      var after;
+      var stop = watchAndInvoke(map, expectAsync1((e) {
+        before = e.oldValue;
+        after = e.newValue;
+      }, count: 2));
+      expect(before, isNull);
+      expect(after, equals({"a" : 1, "b" : 2, "c" :  null}));
+      map["a"] = null;
+      map["c"] = 3;
+      dispatch();
+      expect(before, equals({"a" : 1, "b" : 2, "c" : null}));
+      expect(after, equals({"a" : null, "b" : 2, "c" : 3}));
+      stop();
+    });
+
+    test('watch event differentiates null values order independant', () {
+      var map = new HashMap.from({"a" : 1, "b" : 2, "c" : null});
+      var before;
+      var after;
+      var stop = watchAndInvoke(map, expectAsync1((e) {
+        before = e.oldValue;
+        after = e.newValue;
+      }, count: 2));
+      expect(before, isNull);
+      expect(after, equals(new HashMap.from({"a" : 1, "b" : 2, "c" :  null})));
+      map["a"] = null;
+      map["c"] = 3;
+      dispatch();
+      expect(before, equals(new HashMap.from({"a" : 1, "b" : 2, "c" : null})));
+      expect(after, equals(new HashMap.from({"a" : null, "b" : 2, "c" : 3})));
+      stop();
+    });
  
     test('watch event shows old and new map values order independant', () {
       var map = new HashMap.from({"a" : 1, "b" : 2, "c" : 3});
