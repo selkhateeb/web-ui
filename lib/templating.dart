@@ -610,7 +610,7 @@ class ConditionalTemplate extends PlaceholderTemplate {
 }
 
 /** Function to set up the contents of a loop template. */
-typedef void LoopIterationSetup(loopVariable, Template template);
+typedef void LoopIterationSetup(List list, int index, Template template);
 
 /**
  * A template loop of the form `<template iterate="x in list ">` or
@@ -624,8 +624,9 @@ class LoopTemplate extends PlaceholderTemplate {
   void insert() {
     stopper = watchAndInvoke(exp, (e) {
       super.remove();
-      for (var x in e.newValue) {
-        iterSetup(x, this);
+      List list = e.newValue; // watchers/observers guarantee a List
+      for (int i = 0; i < list.length; i++) {
+        iterSetup(list, i, this);
       }
       super.insert();
     }, 'loop-binding');
@@ -656,8 +657,9 @@ class LoopTemplateInAttribute extends Template {
   void insert() {
     stopper = watchAndInvoke(exp, (e) {
       _removeInternal();
-      for (var x in e.newValue) {
-        iterSetup(x, this);
+      List list = e.newValue; // watchers/observers guarantee a List
+      for (int i = 0; i < list.length; i++) {
+        iterSetup(list, i, this);
       }
       super.create();
       node.nodes.addAll(nodes);

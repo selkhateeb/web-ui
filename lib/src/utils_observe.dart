@@ -4,6 +4,7 @@
 
 library web_ui.src.utils_observe;
 
+import 'dart:collection';
 import 'dart:isolate';
 
 // TODO(jmesserly): helpers to combine hash codes. Reuse these from somewhere.
@@ -65,4 +66,5 @@ class Arrays {
 
 // TODO(jmesserly): bogus type to workaround spurious VM bug with generic base
 // class and mixins.
-abstract class CollectionBase extends Collection<dynamic> {}
+abstract class IterableBase extends Iterable<dynamic> {}
+abstract class ListMixinBase extends ListMixin<dynamic> {}

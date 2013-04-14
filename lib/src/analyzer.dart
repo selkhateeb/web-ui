@@ -10,7 +10,7 @@ library analyzer;
 
 import 'package:html5lib/dom.dart';
 import 'package:html5lib/dom_parsing.dart';
-import 'package:source_maps/span.dart';
+import 'package:source_maps/span.dart' hide SourceFile;
 
 import 'dart_parser.dart';
 import 'files.dart';
@@ -405,9 +405,9 @@ class _Analyzer extends TreeVisitor {
       _readEventHandler(info, name, value);
       return;
     } else if (name.startsWith('bind-')) {
-      // Strip leading "bind-" and make camel case.
-      var fieldName = toCamelCase(name.substring(5));
-      if (_readTwoWayBinding(info, fieldName, value)) {
+      // Strip leading "bind-"
+      var attrName = name.substring(5);
+      if (_readTwoWayBinding(info, attrName, value)) {
         info.removeAttributes.add(name);
       }
       return;
@@ -484,14 +484,16 @@ class _Analyzer extends TreeVisitor {
 
       // Both 'click' and 'change' seem reliable on all the modern browsers.
       eventStream = 'onChange';
-    } else if (isSelect && (name == 'selectedIndex' || name == 'value')) {
+    } else if (isSelect && (name == 'selected-index' || name == 'value')) {
       eventStream = 'onChange';
     } else if (isInput && name == 'value' && inputType == 'radio') {
       return _addRadioValueBinding(info, binding);
     } else if (isInput && name == 'files' && inputType == 'file') {
       eventStream = 'onChange';
     } else if (isTextArea && name == 'value' || isInput &&
-        (name == 'value' || name == 'valueAsDate' || name == 'valueAsNumber')) {
+        (name == 'value' || name == 'value-as-date' ||
+        name == 'value-as-number')) {
+
       // Input event is fired more frequently than "change" on some browsers.
       // We want to update the value for each keystroke.
       eventStream = 'onInput';
@@ -514,7 +516,8 @@ class _Analyzer extends TreeVisitor {
     _checkDuplicateAttribute(info, name);
 
     info.attributes[name] = new AttributeInfo([binding]);
-    _addEvent(info, eventStream, (e) => '${binding.exp} = $e.$name');
+    _addEvent(info, eventStream,
+        (e) => '${binding.exp} = $e.${findDomField(info, name)}');
     return true;
   }
 
