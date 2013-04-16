@@ -609,6 +609,10 @@ abstract class WebComponent implements Element {
     }
   }
 
+  String get regionOverset => host.regionOverset;
+
+  List<Range> getRegionFlowRanges() => host.getRegionFlowRanges();
+
   // TODO(jmesserly): rename "created" to "onCreated".
   void onCreated() => created();
 

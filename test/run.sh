@@ -53,11 +53,20 @@ function compare {
 if [[ ($TEST_PATTERN == "") ]]; then
   # Note: dart_analyzer needs to be run from the root directory for proper path
   # canonicalization.
+  # TODO(jmesserly): switch to new analyzer once it has good coverage for
+  # unimplemented members.
   pushd $DIR/..
+
   echo Analyzing compiler for warnings or type errors
   dart_analyzer --fatal-warnings --fatal-type-errors bin/dwc.dart \
     --work analyzer_out || \
     echo -e "Ignoring analyzer errors ([36mdartbug.com/8132[0m)"
+
+  echo Analyzing runtime for warnings or type errors
+  dart_analyzer --fatal-warnings --fatal-type-errors lib/web_ui.dart \
+    --work analyzer_out || \
+    echo -e "Ignoring analyzer errors ([36mdartbug.com/8132[0m)"
+
   rm -r analyzer_out
   popd
 fi
@@ -123,7 +132,7 @@ popd
 OUT_PATTERN="$DIR/data/output/html5_utils_*$TEST_PATTERN*_bootstrap.dart $DIR/../example/todomvc/test/out/test/*$TEST_PATTERN*_bootstrap.dart"
 if [[ `ls $OUT_PATTERN 2>/dev/null` != "" ]]; then
   echo -e "\n Analyzing generated code for warnings or type errors."
-  ls $OUT_PATTERN 2>/dev/null | dart_analyzer --fatal-warnings --fatal-type-errors \
+  ls $OUT_PATTERN 2>/dev/null | dartanalyzer --package-root=packages --fatal-warnings --fatal-type-errors \
     --work $DIR/data/output/analyzer/ -batch
   rm -r $DIR/data/output/analyzer/
 fi

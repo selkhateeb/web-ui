@@ -5,14 +5,14 @@
 library web_ui.observe.list;
 
 import 'observable.dart';
-import 'package:web_ui/src/utils_observe.dart' show Arrays, ListMixinBase;
+import 'package:web_ui/src/utils_observe.dart' show Arrays, ListMixinWorkaround;
 
 /**
  * Represents an observable list of model values. If any items are added,
  * removed, or replaced, then observers that are registered with
  * [observe] will be notified.
  */
-class ObservableList<E> extends ListMixinBase with Observable
+class ObservableList<E> extends ListMixinWorkaround with Observable
     implements List<E> {
 
   /** The inner [List<E>] with the actual storage. */

@@ -104,7 +104,7 @@ class Compiler {
     if (path.basename(_mainPath).endsWith('.dart')) {
       _messages.error("Please provide an HTML file as your entry point.",
           null);
-      return new Future.immediate(null);
+      return new Future.value(null);
     }
     return _parseAndDiscover(_mainPath).then((_) {
       _analyze();
@@ -210,7 +210,7 @@ class Compiler {
   /** Parse an HTML file. */
   Future<SourceFile> _parseHtmlFile(UrlInfo inputPath) {
     if (!_pathMapper.checkInputPath(inputPath, _messages)) {
-      return new Future<SourceFile>.immediate(null);
+      return new Future<SourceFile>.value(null);
     }
     var filePath = inputPath.resolvedPath;
     return fileSystem.readTextOrBytes(filePath)
@@ -226,7 +226,7 @@ class Compiler {
   /** Parse a Dart file. */
   Future<SourceFile> _parseDartFile(UrlInfo inputPath) {
     if (!_pathMapper.checkInputPath(inputPath, _messages)) {
-      return new Future<SourceFile>.immediate(null);
+      return new Future<SourceFile>.value(null);
     }
     var filePath = inputPath.resolvedPath;
     return fileSystem.readText(filePath)
@@ -238,7 +238,7 @@ class Compiler {
   /** Parse a stylesheet file. */
   Future<SourceFile> _parseStyleSheetFile(UrlInfo inputPath) {
     if (!_pathMapper.checkInputPath(inputPath, _messages)) {
-      return new Future<SourceFile>.immediate(null);
+      return new Future<SourceFile>.value(null);
     }
     var filePath = inputPath.resolvedPath;
     return fileSystem.readText(filePath)
