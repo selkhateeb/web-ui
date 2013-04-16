@@ -34,13 +34,12 @@ void renderTests(String baseDir, String inputDir, String expectedDir,
 
   // First clear the output folder. Otherwise we can miss bugs when we fail to
   // generate a file.
-  test('Cleaning old output for ${path.relative(outDir, from: scriptDir)}', () {
-    var dir = new Directory(outDir);
-    if (dir.existsSync()) {
-      dir.deleteSync(recursive: true);
-    }
-    dir.createSync();
-  });
+  var dir = new Directory(outDir);
+  if (dir.existsSync()) {
+    print('Cleaning old output for ${path.normalize(outDir)}');
+    dir.deleteSync(recursive: true);
+  }
+  dir.createSync();
 
   for (var filePath in paths) {
     var filename = path.basename(filePath);
