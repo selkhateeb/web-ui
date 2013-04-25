@@ -68,7 +68,7 @@ Future<List<dwc.CompilerResult>> build(List<String> arguments,
         if (!useColors) dwcArgs.add('--no-colors');
         dwcArgs.addAll(['-o', outDir.toString(), file]);
         // Chain tasks to that we run one at a time.
-        lastTask = lastTask.then((_) => dwc.run(dwcArgs));
+        lastTask = lastTask.then((_) => dwc.run(dwcArgs, printTime: true));
         tasks.add(lastTask);
 
         if (machineFormat) {
