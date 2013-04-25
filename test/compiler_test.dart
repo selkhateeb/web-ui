@@ -77,11 +77,11 @@ main() {
 
       compiler.run().then(expectAsync1((e) {
         var msgs = messages.messages.where((m) =>
-            m.message.contains('notfound.dart')).toList();
+            m.message.contains('unable')).toList();
 
         expect(msgs.length, 1);
         expect(msgs[0].level, Level.SEVERE);
-        expect(msgs[0].message, contains('exception while reading file'));
+        expect(msgs[0].message, contains('unable to open file'));
         expect(msgs[0].span, isNotNull);
         expect(msgs[0].span.sourceUrl, 'index.html');
 
@@ -103,11 +103,11 @@ main() {
 
       compiler.run().then(expectAsync1((e) {
         var msgs = messages.messages.where((m) =>
-            m.message.contains('notfound.html')).toList();
+            m.message.contains('unable')).toList();
 
         expect(msgs.length, 1);
         expect(msgs[0].level, Level.SEVERE);
-        expect(msgs[0].message, contains('exception while reading file'));
+        expect(msgs[0].message, contains('unable to open file'));
         expect(msgs[0].span, isNotNull);
         expect(msgs[0].span.sourceUrl, 'index.html');
 
@@ -133,11 +133,11 @@ main() {
 
       compiler.run().then(expectAsync1((e) {
         var msgs = messages.messages.where((m) =>
-            m.message.contains('notfound.dart')).toList();
+            m.message.contains('unable')).toList();
 
         expect(msgs.length, 1);
         expect(msgs[0].level, Level.SEVERE);
-        expect(msgs[0].message, contains('exception while reading file'));
+        expect(msgs[0].message, contains('unable to open file'));
 
         MockFileSystem fs = compiler.fileSystem;
         expect(fs.readCount,

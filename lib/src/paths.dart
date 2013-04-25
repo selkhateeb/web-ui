@@ -63,14 +63,14 @@ class PathMapper {
     var parentDir = '..${path.separator}';
     if (!path.relative(canonicalized, from: _outputDir).startsWith(parentDir)) {
       messages.error(
-          'The file ${input} cannot be processed. '
+          'The file ${input.resolvedPath} cannot be processed. '
           'Files cannot be under the output folder (${_outputDir}).',
           input.sourceSpan);
       return false;
     }
     if (path.relative(canonicalized, from: _baseDir).startsWith(parentDir)) {
       messages.error(
-          'The file ${input} cannot be processed. '
+          'The file ${input.resolvedPath} cannot be processed. '
           'All processed files must be under the base folder (${_baseDir}), you'
           ' can specify the base folder using the --basedir flag.',
           input.sourceSpan);

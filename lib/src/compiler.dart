@@ -125,8 +125,7 @@ class Compiler {
     _tasks = new FutureGroup();
     _processed = new Set();
     _processed.add(inputFile);
-    _tasks.add(_parseHtmlFile(new UrlInfo(inputFile, null))
-        .then(_processHtmlFile));
+    _tasks.add(_parseHtmlFile(new UrlInfo(inputFile, null)));
     return _tasks.future;
   }
 
@@ -147,38 +146,37 @@ class Compiler {
 
     // Load component files referenced by [file].
     for (var link in fileInfo.componentLinks) {
-      var href = link.resolvedPath;
-      if (!_processed.contains(href)) {
-        _processed.add(href);
-        _tasks.add(_parseHtmlFile(link).then(_processHtmlFile));
-      }
+      _loadFile(link, _parseHtmlFile);
     }
 
     // Load stylesheet files referenced by [file].
     for (var link in fileInfo.styleSheetHref) {
-      var href = link.resolvedPath;
-      if (!_processed.contains(href)) {
-        _processed.add(href);
-        _tasks.add(_parseStyleSheetFile(link).then(_processStyleSheetFile));
-      }
+      _loadFile(link, _parseCssFile);
     }
 
     // Load .dart files being referenced in the page.
-    var src = fileInfo.externalFile;
-    if (src != null && !_processed.contains(src.resolvedPath)) {
-      _processed.add(src.resolvedPath);
-      _tasks.add(_parseDartFile(src).then(_processDartFile));
-    }
+    _loadFile(fileInfo.externalFile, _parseDartFile);
 
     // Load .dart files being referenced in components.
     for (var component in fileInfo.declaredComponents) {
-      var src = component.externalFile;
-      if (src != null && !_processed.contains(src.resolvedPath)) {
-        _processed.add(src.resolvedPath);
-        _tasks.add(_parseDartFile(src).then(_processDartFile));
+      if (component.externalFile != null) {
+        _loadFile(component.externalFile, _parseDartFile);
       } else if (component.userCode != null) {
         _processImports(component);
       }
+    }
+  }
+
+  /**
+   * Helper function to load [urlInfo] and parse it using [loadAndParse] if it
+   * hasn't been loaded before.
+   */
+  void _loadFile(UrlInfo urlInfo, Future loadAndParse(UrlInfo inputUrl)) {
+    if (urlInfo == null) return;
+    var resolvedPath = urlInfo.resolvedPath;
+    if (!_processed.contains(resolvedPath)) {
+      _processed.add(resolvedPath);
+      _tasks.add(loadAndParse(urlInfo));
     }
   }
 
@@ -208,49 +206,61 @@ class Compiler {
   }
 
   /** Parse an HTML file. */
-  Future<SourceFile> _parseHtmlFile(UrlInfo inputPath) {
+  Future _parseHtmlFile(UrlInfo inputPath) {
     if (!_pathMapper.checkInputPath(inputPath, _messages)) {
       return new Future<SourceFile>.value(null);
     }
     var filePath = inputPath.resolvedPath;
     return fileSystem.readTextOrBytes(filePath)
+        .catchError((e) => _readError(e, inputPath))
         .then((source) {
+          if (source == null) return;
           var file = new SourceFile(filePath);
           file.document = _time('Parsed', filePath,
               () => parseHtml(source, filePath, _messages));
-          return file;
-        })
-        .catchError((e) => _readError(e, inputPath));
+          _processHtmlFile(file);
+        });
   }
 
   /** Parse a Dart file. */
-  Future<SourceFile> _parseDartFile(UrlInfo inputPath) {
+  Future _parseDartFile(UrlInfo inputPath) {
     if (!_pathMapper.checkInputPath(inputPath, _messages)) {
       return new Future<SourceFile>.value(null);
     }
     var filePath = inputPath.resolvedPath;
     return fileSystem.readText(filePath)
-        .then((code) => new SourceFile(filePath, type: SourceFile.DART)
-            ..code = code)
-        .catchError((e) => _readError(e, inputPath));
+        .catchError((e) => _readError(e, inputPath))
+        .then((code) {
+          if (code == null) return;
+          var file = new SourceFile(filePath, type: SourceFile.DART);
+          file.code = code;
+          _processDartFile(file);
+        });
   }
 
   /** Parse a stylesheet file. */
-  Future<SourceFile> _parseStyleSheetFile(UrlInfo inputPath) {
-    if (!_pathMapper.checkInputPath(inputPath, _messages)) {
+  Future _parseCssFile(UrlInfo inputPath) {
+    if (!options.processCss ||
+        !_pathMapper.checkInputPath(inputPath, _messages)) {
       return new Future<SourceFile>.value(null);
     }
     var filePath = inputPath.resolvedPath;
     return fileSystem.readText(filePath)
-        .then((code) => new SourceFile(filePath, type: SourceFile.STYLESHEET)
-            ..code = code)
-        .catchError((e) => _readError(e, inputPath, isWarning: true));
+        .catchError((e) => _readError(e, inputPath, isWarning: true))
+        .then((code) {
+          if (code == null) return;
+          var file = new SourceFile(filePath, type: SourceFile.STYLESHEET);
+          file.code = code;
+          _processCssFile(file);
+        });
   }
 
 
   SourceFile _readError(error, UrlInfo inputPath, {isWarning: false}) {
-    var message = 'exception while reading file "${inputPath.resolvedPath}", '
-        'original message:\n $error';
+    var message = 'unable to open file "${inputPath.resolvedPath}"';
+    if (options.verbose) {
+      message = '$message. original message:\n $error';
+    }
     if (isWarning) {
       _messages.warning(message, inputPath.sourceSpan);
     } else {
@@ -284,16 +294,15 @@ class Compiler {
         if (uri.startsWith('package:web_ui/observe')) {
           _useObservers = true;
         }
-      } else if (!_processed.contains(src)) {
-        _processed.add(src);
-        var resolvedPath = new UrlInfo(src,
+      } else {
+        var urlInfo = new UrlInfo(src,
             library.userCode.sourceFile.span(directive.offset, directive.end));
-        _tasks.add(_parseDartFile(resolvedPath).then(_processDartFile));
+        _loadFile(urlInfo, _parseDartFile);
       }
     }
   }
 
-  void _processStyleSheetFile(SourceFile cssFile) {
+  void _processCssFile(SourceFile cssFile) {
     if (cssFile == null) return;
 
     files.add(cssFile);
@@ -315,12 +324,7 @@ class Compiler {
         fileInfo.styleSheetHref.add(urlInfo);
 
         // Load any @imported stylesheet files referenced in this style sheet.
-        var url = urlInfo.resolvedPath;
-        if (!_processed.contains(url)) {
-          _processed.add(url);
-          _tasks.add(_parseStyleSheetFile(urlInfo)
-              .then(_processStyleSheetFile));
-        }
+        _loadFile(urlInfo, _parseCssFile);
       }
     }
   }

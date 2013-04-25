@@ -854,7 +854,7 @@ class _ElementLoader extends TreeVisitor {
     if (templateNodes.length == 1) {
       template = templateNodes.single;
     } else {
-      _messages.warning('an <element> should have exactly one <template> child',
+      _messages.error('an <element> should have exactly one <template> child',
           node.sourceSpan);
     }
 
