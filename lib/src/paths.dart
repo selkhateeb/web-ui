@@ -105,7 +105,7 @@ class PathMapper {
    * `package:` imports work.
    *
    * To make it possible to share components through pub, we allow using tags of
-   * the form `<link rel="component" href="packages/...">`, so that you can
+   * the form `<link rel="import" href="packages/...">`, so that you can
    * refer to components within the packages symlink.  Regardless of whether an
    * --out option was given to the compiler, we don't want to generate files
    * inside `packages/` for those components.  Instead we will generate such

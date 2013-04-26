@@ -33,7 +33,7 @@ class LibrarySummary {
 class HtmlFileSummary extends LibrarySummary {
   /**
    * Summary of each component defined either explicitly the HTML file or
-   * included transitively from `<link rel="component">` tags.
+   * included transitively from `<link rel="import">` tags.
    */
   final Map<String, ComponentSummary> components;
 

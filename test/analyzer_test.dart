@@ -558,7 +558,7 @@ main() {
 
     test('component properties 1-way binding', () {
       var files = parseFiles({
-        'index.html': '<head><link rel="components" href="foo.html">'
+        'index.html': '<head><link rel="import" href="foo.html">'
                       '<body><element name="x-bar" extends="x-foo" '
                                      'constructor="Bar"></element>'
                       '<x-bar quux="{{123}}">',
@@ -575,7 +575,7 @@ main() {
 
     test('component properties 2-way binding', () {
       var files = parseFiles({
-        'index.html': '<head><link rel="components" href="foo.html">'
+        'index.html': '<head><link rel="import" href="foo.html">'
                       '<body><element name="x-bar" extends="x-foo" '
                                      'constructor="Bar"></element>'
                       '<x-bar bind-quux="assignable">',
@@ -600,24 +600,37 @@ main() {
     test('links', () {
       var info = analyzeDefinitionsInTree(parse(
         '<head>'
-          '<link rel="components" href="foo.html">'
-          '<link rel="something" href="bar.html">'
-          '<link rel="components" hrefzzz="baz.html">'
-          '<link rel="components" href="quux.html">'
+          '<link rel="import" href="p1">'
+          '<link rel="something" href="p2">'
+          '<link rel="import" hrefzzz="p3">'
+          '<link rel="import" href="p4">'
+          '<link rel="component" href="p5">'
+          '<link rel="components" href="p6">'
+          '<link rel="component" hrefzzz="p7">'
         '</head>'
-        '<body><link rel="components" href="quuux.html">'
+        '<body><link rel="import" href="p7.html">'
       ));
       expect(info.componentLinks.map((l) => l.resolvedPath),
-          equals(['foo.html', 'quux.html']));
+          equals(['p1', 'p4', 'p5', 'p6']));
+      expect(messages.length, 6);
+      expect(messages[0].message, 'link rel="import" missing href.');
+      expect(messages[1].message, startsWith('import syntax is changing'));
+      expect(messages[1].message, contains('rel="component"'));
+      expect(messages[2].message, startsWith('import syntax is changing'));
+      expect(messages[2].message, contains('rel="components"'));
+      expect(messages[3].message, startsWith('import syntax is changing'));
+      expect(messages[4].message, contains('rel="component"'));
+      expect(messages[4].message, 'link rel="component" missing href.');
+      expect(messages[5].message, 'link rel="import" only valid in head.');
     });
 
     test('package links are resolved against package root', () {
       var info = analyzeDefinitionsInTree(parse(
         '<head>'
-          '<link rel="components" href="package:foo/foo.html">'
-          '<link rel="components" href="package:quux/quux.html">'
+          '<link rel="import" href="package:foo/foo.html">'
+          '<link rel="import" href="package:quux/quux.html">'
         '</head>'
-        '<body><link rel="components" href="quuux.html">'
+        '<body><link rel="import" href="quuux.html">'
       ), packageRoot: '/my/packages');
       expect(info.componentLinks.map((l) => l.resolvedPath), equals([
           '/my/packages/foo/foo.html',
@@ -870,7 +883,7 @@ main() {
 
     test('binds components from another file', () {
       var files = parseFiles({
-        'index.html': '<head><link rel="components" href="foo.html">'
+        'index.html': '<head><link rel="import" href="foo.html">'
                       '<body><x-foo>',
         'foo.html': '<body><element name="x-foo" constructor="Foo">'
       });
@@ -888,8 +901,8 @@ main() {
     test('ignores elements with multiple definitions', () {
       var files = parseFiles({
         'index.html': '<head>'
-                      '<link rel="components" href="foo.html">'
-                      '<link rel="components" href="bar.html">'
+                      '<link rel="import" href="foo.html">'
+                      '<link rel="import" href="bar.html">'
                       '<body><x-foo>',
         'foo.html': '<body><element name="x-foo" constructor="Foo">',
         'bar.html': '<body><element name="x-foo" constructor="Foo">'
@@ -911,9 +924,9 @@ main() {
 
     test('shadowing of imported names is allowed', () {
       var files = parseFiles({
-        'index.html': '<head><link rel="components" href="foo.html">'
+        'index.html': '<head><link rel="import" href="foo.html">'
                       '<body><x-foo>',
-        'foo.html': '<head><link rel="components" href="bar.html">'
+        'foo.html': '<head><link rel="import" href="bar.html">'
                     '<body><element name="x-foo" constructor="Foo">',
         'bar.html': '<body><element name="x-foo" constructor="Foo">'
       });
@@ -931,9 +944,9 @@ main() {
 
     test('element imports are not transitive', () {
       var files = parseFiles({
-        'index.html': '<head><link rel="components" href="foo.html">'
+        'index.html': '<head><link rel="import" href="foo.html">'
                       '<body><x-foo>',
-        'foo.html': '<head><link rel="components" href="bar.html">',
+        'foo.html': '<head><link rel="import" href="bar.html">',
         'bar.html': '<body><element name="x-foo" constructor="Foo">'
       });
 
@@ -966,7 +979,7 @@ main() {
 
     test('components extends another component', () {
       var files = parseFiles({
-        'index.html': '<head><link rel="components" href="foo.html">'
+        'index.html': '<head><link rel="import" href="foo.html">'
                       '<body><element name="x-bar" extends="x-foo" '
                                      'constructor="Bar">',
         'foo.html': '<body><element name="x-foo" constructor="Foo">'
@@ -983,12 +996,12 @@ main() {
     test('recursive component import', () {
       var files = parseFiles({
         'index.html': '<head>'
-                      '<link rel="components" href="foo.html">'
-                      '<link rel="components" href="bar.html">'
+                      '<link rel="import" href="foo.html">'
+                      '<link rel="import" href="bar.html">'
                       '<body><x-foo><x-bar>',
-        'foo.html': '<head><link rel="components" href="bar.html">'
+        'foo.html': '<head><link rel="import" href="bar.html">'
                     '<body><element name="x-foo" constructor="Foo">',
-        'bar.html': '<head><link rel="components" href="foo.html">'
+        'bar.html': '<head><link rel="import" href="foo.html">'
                     '<body><element name="x-bar" constructor="Boo">'
       });
 

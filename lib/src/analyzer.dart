@@ -755,7 +755,7 @@ class _Analyzer extends TreeVisitor {
   }
 }
 
-/** A visitor that finds `<link rel="components">` and `<element>` tags.  */
+/** A visitor that finds `<link rel="import">` and `<element>` tags.  */
 class _ElementLoader extends TreeVisitor {
   final FileInfo _fileInfo;
   LibraryInfo _currentInfo;
@@ -788,19 +788,23 @@ class _ElementLoader extends TreeVisitor {
   }
 
   /**
-   * Process `link rel="component"` as specified in:
+   * Process `link rel="import"` as specified in:
    * <https://dvcs.w3.org/hg/webcomponents/raw-file/tip/spec/components/index.html#link-type-component>
    */
   void visitLinkElement(Element node) {
     var rel = node.attributes['rel'];
-    // TODO(jmesserly): deprecate the plural form, it is singular in the spec.
     if (rel != 'component' && rel != 'components' &&
-        rel != 'stylesheet') return;
+        rel != 'import' && rel != 'stylesheet') return;
 
     if (!_inHead) {
       _messages.warning('link rel="$rel" only valid in '
           'head.', node.sourceSpan);
       return;
+    }
+
+    if (rel == 'component' || rel == 'components') {
+      _messages.warning('import syntax is changing, use '
+          'rel="import" instead of rel="$rel".', node.sourceSpan);
     }
 
     var href = node.attributes['href'];

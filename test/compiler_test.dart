@@ -33,14 +33,14 @@ main() {
   test('recursive dependencies', () {
     var compiler = createCompiler({
       'index.html': '<head>'
-                    '<link rel="components" href="foo.html">'
-                    '<link rel="components" href="bar.html">'
+                    '<link rel="import" href="foo.html">'
+                    '<link rel="import" href="bar.html">'
                     '<body><x-foo></x-foo><x-bar></x-bar>'
                     '<script type="application/dart">main() {}</script>',
-      'foo.html': '<head><link rel="components" href="bar.html">'
+      'foo.html': '<head><link rel="import" href="bar.html">'
                   '<body><element name="x-foo" constructor="Foo">'
                   '<template><x-bar>',
-      'bar.html': '<head><link rel="components" href="foo.html">'
+      'bar.html': '<head><link rel="import" href="foo.html">'
                   '<body><element name="x-bar" constructor="Boo">'
                   '<template><x-foo>',
     });
@@ -96,7 +96,7 @@ main() {
     test('component html', () {
       var compiler = createCompiler({
         'index.html': '<head>'
-            '<link rel="components" href="notfound.html">'
+            '<link rel="import" href="notfound.html">'
             '<body><x-foo>'
             '<script type="application/dart">main() {}</script>',
       });
@@ -122,7 +122,7 @@ main() {
     test('component script', () {
       var compiler = createCompiler({
         'index.html': '<head>'
-            '<link rel="components" href="foo.html">'
+            '<link rel="import" href="foo.html">'
             '<body><x-foo></x-foo>'
             '<script type="application/dart">main() {}</script>'
             '</body>',
