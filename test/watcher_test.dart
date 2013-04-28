@@ -5,6 +5,7 @@
 /** Tests for the watcher library. */
 library watcher_test;
 
+import 'dart:collection';
 import 'package:unittest/compact_vm_config.dart';
 import 'package:unittest/unittest.dart';
 import 'package:web_ui/watcher.dart';
@@ -202,6 +203,119 @@ main() {
       dispatch();
       expect(before, orderedEquals([1, 42, 3]));
       expect(after, orderedEquals([1, 42]));
+      stop();
+    });
+  });
+
+  group('maps', () {
+    test('watch changes to maps', () {
+      var map = {"a" : 1, "b" : 2, "c" : 3};
+      var copy = {"a" : 1, "b" : 2, "c" : 3};
+      var stop = watch(map, expectAsync1((_) {
+        copy.clear();
+        map.forEach((var key, var value) => copy[key] = value);
+      }, count: 2));
+      expect(copy, equals({"a" : 1, "b" : 2, "c" : 3}));
+      map["b"] = 42;
+      dispatch();
+      expect(copy, equals({"a" : 1, "b" : 42, "c" : 3}));
+      map.remove("c");
+      dispatch();
+      expect(copy, equals({"a" : 1, "b" : 42}));
+      stop();
+    });
+
+    test('watch on map is shallow only', () {
+      var map = {"a" : new B(4)};
+      // callback is not invoked (count: 0)
+      var stop = watch(map, expectAsync1((_) {}, count: 0));
+      dispatch();
+      map["a"].c = 42;
+      dispatch();
+      stop();
+    });
+
+    test('watch event shows old and new map values order dependant', () {
+      var map = {"a" : 1, "b" : 2, "c" : 3};
+      var before;
+      var after;
+      var stop = watchAndInvoke(map, expectAsync1((e) {
+        before = e.oldValue;
+        after = e.newValue;
+      }, count: 4));
+      expect(before, isNull);
+      expect(after, equals({"a" : 1, "b" : 2, "c" : 3}));
+      map["b"] = 42;
+      dispatch();
+      expect(before, equals({"a" : 1, "b" : 2, "c" : 3}));
+      expect(after, equals({"a" : 1, "b" : 42, "c" : 3}));
+      map.remove("c");
+      dispatch();
+      expect(before, equals({"a" : 1, "b" : 42, "c" : 3}));
+      expect(after, equals({"a" : 1, "b" : 42}));
+      map.remove("a");
+      map["a"] = 1;
+      dispatch();
+      // Order of keys matter.
+      expect(before, equals({"a" : 1, "b" : 42}));
+      expect(after, equals({"b" : 42, "a" : 1}));
+      stop();
+    });
+
+    test('watch event differentiates null values order dependant', () {
+      var map = {"a" : 1, "b" : 2, "c" : null};
+      var before;
+      var after;
+      var stop = watchAndInvoke(map, expectAsync1((e) {
+        before = e.oldValue;
+        after = e.newValue;
+      }, count: 2));
+      expect(before, isNull);
+      expect(after, equals({"a" : 1, "b" : 2, "c" :  null}));
+      map["a"] = null;
+      map["c"] = 3;
+      dispatch();
+      expect(before, equals({"a" : 1, "b" : 2, "c" : null}));
+      expect(after, equals({"a" : null, "b" : 2, "c" : 3}));
+      stop();
+    });
+
+    test('watch event differentiates null values order independant', () {
+      var map = new HashMap.from({"a" : 1, "b" : 2, "c" : null});
+      var before;
+      var after;
+      var stop = watchAndInvoke(map, expectAsync1((e) {
+        before = e.oldValue;
+        after = e.newValue;
+      }, count: 2));
+      expect(before, isNull);
+      expect(after, equals(new HashMap.from({"a" : 1, "b" : 2, "c" :  null})));
+      map["a"] = null;
+      map["c"] = 3;
+      dispatch();
+      expect(before, equals(new HashMap.from({"a" : 1, "b" : 2, "c" : null})));
+      expect(after, equals(new HashMap.from({"a" : null, "b" : 2, "c" : 3})));
+      stop();
+    });
+ 
+    test('watch event shows old and new map values order independant', () {
+      var map = new HashMap.from({"a" : 1, "b" : 2, "c" : 3});
+      var before;
+      var after;
+      var stop = watchAndInvoke(map, expectAsync1((e) {
+        before = e.oldValue;
+        after = e.newValue;
+      }, count: 2));
+      expect(before, isNull);
+      expect(after, equals(new HashMap.from({"a" : 1, "b" : 2, "c" : 3})));
+      map["b"] = 42;
+      dispatch();
+      expect(before, equals(new HashMap.from({"a" : 1, "b" : 2, "c" : 3})));
+      expect(after, equals(new HashMap.from({"a" : 1, "b" : 42, "c" : 3})));
+      map.remove("a");
+      map["a"] = 1;
+      dispatch();
+      // Order of keys don't matter.
       stop();
     });
   });
