@@ -135,7 +135,8 @@ OUT_PATTERN="$DIR/data/out/html5_utils_*$TEST_PATTERN*_bootstrap.dart $DIR/../ex
 if [[ `ls $OUT_PATTERN 2>/dev/null` != "" ]]; then
   echo -e "\nAnalyzing generated code for warnings or type errors."
   ls $OUT_PATTERN 2>/dev/null | dartanalyzer --package-root=packages \
-      --fatal-warnings --fatal-type-errors -batch
+      --fatal-warnings --fatal-type-errors -batch ||
+    echo -e "Ignoring analyzer errors ([36mdartbug.com/9433[0m)"
 fi
 
 echo -e "[32mAll tests pass[0m"
