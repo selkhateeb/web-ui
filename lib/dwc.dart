@@ -44,9 +44,8 @@ class CompilerResult {
                   this.messages = const [],
                   this.bootstrapFile]);
 
-  factory CompilerResult._(Messages messages, List<OutputFile> outputs,
-      List<SourceFile> files) {
-    var success = !messages.messages.any((m) => m.level == Level.SEVERE);
+  factory CompilerResult._(bool success,
+      List<String> messages, List<OutputFile> outputs, List<SourceFile> files) {
     var file;
     var outs = new Map<String, String>();
     for (var out in outputs) {
@@ -56,8 +55,7 @@ class CompilerResult {
       outs[out.path] = out.source;
     }
     var inputs = files.map((f) => f.path).toList();
-    var msgs = messages.messages.map((m) => m.toString()).toList();
-    return new CompilerResult(success, outs, inputs, msgs, file);
+    return new CompilerResult(success, outs, inputs, messages, file);
   }
 }
 
@@ -80,7 +78,12 @@ Future<CompilerResult> run(List<String> args, {bool printTime}) {
     var res;
     return compiler.run()
       .then((_) {
-        res = new CompilerResult._(messages, compiler.output, compiler.files);
+        var success = messages.messages.any((m) => m.level != Level.SEVERE);
+        var msgs = options.jsonFormat
+            ? messages.messages.map((m) => m.toJson())
+            : messages.messages.map((m) => m.toString());
+        res = new CompilerResult._(success, msgs.toList(),
+            compiler.output, compiler.files);
       })
       .then((_) => symlinkPubPackages(res, options, messages))
       .then((_) => emitFiles(compiler.output, options.clean))
