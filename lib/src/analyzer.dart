@@ -8,12 +8,15 @@
  */
 library analyzer;
 
+import 'package:csslib/parser.dart' as Css;
+import 'package:csslib/visitor.dart' show StyleSheet, treeToDebugString, Visitor, Expressions, VarDefinition;
 import 'package:html5lib/dom.dart';
 import 'package:html5lib/dom_parsing.dart';
 import 'package:source_maps/span.dart' hide SourceFile;
 
 import 'dart_parser.dart';
 import 'files.dart';
+import 'html_css_fixup.dart';
 import 'html5_utils.dart';
 import 'info.dart';
 import 'messages.dart';
@@ -819,7 +822,7 @@ class _ElementLoader extends TreeVisitor {
         node.sourceSpan, isCss: isStyleSheet);
     if (urlInfo == null) return;
     if (isStyleSheet) {
-      _fileInfo.styleSheetHref.add(urlInfo);
+      _fileInfo.styleSheetHrefs.add(urlInfo);
     } else {
       _fileInfo.componentLinks.add(urlInfo);
     }
@@ -1041,5 +1044,139 @@ class BindingParser {
       } while (moveNext());
     }
     content.add(textContent);
+  }
+}
+
+
+void analyzeCss(String packageRoot, List<SourceFile> files,
+                Map<String, FileInfo> info, Messages messages,
+                {warningsAsErrors: false}) {
+  var analyzer = new _AnalyzerCss(packageRoot, info, messages,
+      warningsAsErrors);
+  for (var file in files) analyzer.process(file);
+  analyzer.normalize();
+}
+
+class _AnalyzerCss {
+  final String packageRoot;
+  final Map<String, FileInfo> info;
+  final Messages _messages;
+  final bool _warningsAsErrors;
+
+  Set<StyleSheet> allStyleSheets = new Set<StyleSheet>();
+
+  _AnalyzerCss(this.packageRoot, this.info, this._messages,
+      this._warningsAsErrors);
+
+  /**
+   * Run the analyzer on every file that is a style sheet or any component that
+   * has a style tag.
+   */
+  void process(SourceFile file) {
+    var fileInfo = info[file.path];
+    if (file.isStyleSheet || fileInfo.styleSheets.length > 0) {
+      var styleSheets = processVars(fileInfo);
+
+      // Add to list of all style sheets analyzed.
+      allStyleSheets.addAll(styleSheets);
+    }
+
+    // Process any components.
+    for (var component in fileInfo.declaredComponents) {
+      var all = processVars(component);
+
+      // Add to list of all style sheets analyzed.
+      allStyleSheets.addAll(all);
+    }
+  }
+
+  void normalize() {
+    // Remove all var definitions for all style sheets analyzed.
+    for (var tree in allStyleSheets) new RemoveVarDefinitions().visitTree(tree);
+  }
+
+  List<StyleSheet> processVars(var libraryInfo) {
+    // Get list of all stylesheet(s) dependencies referenced from this file.
+    var styleSheets = _dependencies(libraryInfo).toList();
+
+    var errors = [];
+    Css.analyze(styleSheets, errors: errors, options:
+      [_warningsAsErrors ? '--warnings_as_errors' : '', 'memory']);
+
+    // Print errors as warnings.
+    for (var e in errors) {
+      _messages.warning(e.message, e.span);
+    }
+
+    // Build list of all var definitions.
+    Map varDefs = new Map();
+    for (var tree in styleSheets) {
+      var allDefs = (new VarDefinitions()..visitTree(tree)).found;
+      allDefs.forEach((key, value) {
+        varDefs[key] = value;
+      });
+    }
+
+    // Resolve all definitions to a non-VarUsage (terminal expression).
+    varDefs.forEach((key, value) {
+      for (var expr in (value.expression as Expressions).expressions) {
+        var def = findTerminalVarDefinition(varDefs, value);
+        varDefs[key] = def;
+      }
+    });
+
+    // Resolve all var usages.
+    for (var tree in styleSheets) new ResolveVarUsages(varDefs).visitTree(tree);
+
+    return styleSheets;
+  }
+
+  /**
+   * Given a component or file check if any stylesheets referenced.  If so then
+   * return a list of all referenced stylesheet dependencies (@imports or <link
+   * rel="stylesheet" ..>).
+   */
+  Set<StyleSheet> _dependencies(var libraryInfo, {Set<StyleSheet> seen}) {
+    if (seen == null) seen = new Set();
+
+    // Used to resolve all pathing information.
+    String inputPath = libraryInfo is FileInfo
+        ? libraryInfo.inputPath
+        : (libraryInfo as ComponentInfo).declaringFile.inputPath;
+
+    for (var styleSheet in libraryInfo.styleSheets) {
+      if (!seen.contains(styleSheet)) {
+        // TODO(terry): VM uses expandos to implement hashes.  Currently, it's a
+        //              linear (not constant) time cost (see dartbug.com/5746).
+        //              If this bug isn't fixed and performance show's this a
+        //              a problem we'll need to implement our own hashCode or
+        //              use a different key for better perf.
+        // Add the stylesheet.
+        seen.add(styleSheet);
+
+        // Any other imports in this stylesheet?
+        var urlInfos = findImportsInStyleSheet(styleSheet, packageRoot,
+            inputPath);
+
+        // Process other imports in this stylesheets.
+        for (var importSS in urlInfos) {
+          var importInfo = info[importSS.resolvedPath];
+          if (importInfo != null) {
+            // Add all known stylesheets processed.
+            seen.addAll(importInfo.styleSheets);
+            // Find dependencies for stylesheet referenced with a
+            // @import
+            for (var ss in importInfo.styleSheets) {
+              var urls = findImportsInStyleSheet(ss, packageRoot, inputPath);
+              for (var url in urls) {
+                _dependencies(info[url.resolvedPath], seen: seen);
+              }
+            }
+          }
+        }
+      }
+    }
+
+    return seen;
   }
 }

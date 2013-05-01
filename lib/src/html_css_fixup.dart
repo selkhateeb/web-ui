@@ -5,7 +5,9 @@
 library html_css_fixup;
 
 import 'dart:json' as json;
+import 'dart:uri' show Uri;
 
+import 'package:csslib/parser.dart' as css;
 import 'package:csslib/visitor.dart';
 import 'package:html5lib/dom.dart';
 import 'package:html5lib/dom_parsing.dart';
@@ -28,11 +30,13 @@ void fixupHtmlCss(FileInfo fileInfo, CompilerOptions opts) {
   // stylesheet selectors and making those CSS classes and ids unique to that
   // component.
   if (opts.verbose) print("  CSS fixup ${path.basename(fileInfo.inputPath)}");
+
   for (var component in fileInfo.declaredComponents) {
     // TODO(terry): Consider allowing more than one style sheet per component.
     // For components only 1 stylesheet allowed.
     if (component.styleSheets.length == 1) {
       var styleSheet = component.styleSheets[0];
+
       // If polyfill is on prefix component name to all CSS classes and ids
       // referenced in the scoped style.
       var prefix = opts.processCss ? component.tagName : null;
@@ -92,10 +96,12 @@ String createCssSelectorsDefinition(ComponentInfo info, bool cssPolyfill) {
   return 'static Map<String, String> _css = $css;';
 }
 
-// TODO(terry): Do we need to handle other selectors than IDs/classes?
+// TODO(terry): Need to handle other selectors than IDs/classes like tag name
+//              e.g., DIV { color: red; }
 // TODO(terry): Would be nice if we didn't need to mangle names; requires users
 //              to be careful in their code and makes it more than a "polyfill".
-//              Maybe mechanism that generates CSS class name for scoping.
+//              Maybe mechanism that generates CSS class name for scoping.  This
+//              would solve tag name selectors (see above TODO).
 /**
  * Fix a component's HTML to implement scoped stylesheets.
  *
@@ -177,6 +183,150 @@ class _ScopedStyleRenamer extends InfoVisitor {
   }
 }
 
+
+/**
+ * Find var- definitions in a style sheet.
+ * [found] list of known definitions.
+ */
+class VarDefinitions extends Visitor {
+  final Map<String, VarDefinition> found = new Map();
+
+  void visitTree(StyleSheet tree) {
+    visitStyleSheet(tree);
+  }
+
+  visitVarDefinition(VarDefinition node) {
+    // Replace with latest variable definition.
+    found[node.definedName] = node;
+    super.visitVarDefinition(node);
+  }
+
+  void visitVarDefinitionDirective(VarDefinitionDirective node) {
+    visitVarDefinition(node.def);
+  }
+}
+
+/**
+ * Resolve any CSS expression which contains a var() usage to the ultimate real
+ * CSS expression value e.g.,
+ *
+ *    var-one: var(two);
+ *    var-two: #ff00ff;
+ *
+ *    .test {
+ *      color: var(one);
+ *    }
+ *
+ * then .test's color would be #ff00ff
+ */
+class ResolveVarUsages extends Visitor {
+  final Map<String, VarDefinition> varDefs;
+  bool inVarDefinition = false;
+  bool inUsage = false;
+  Expressions currentExpressions;
+
+  ResolveVarUsages(this.varDefs);
+
+  void visitTree(StyleSheet tree) {
+    visitStyleSheet(tree);
+  }
+
+  void visitVarDefinition(VarDefinition varDef) {
+    inVarDefinition = true;
+    super.visitVarDefinition(varDef);
+    inVarDefinition = false;
+  }
+
+  void visitExpressions(Expressions node) {
+    currentExpressions = node;
+    super.visitExpressions(node);
+    currentExpressions = null;
+  }
+
+  void visitVarUsage(VarUsage node) {
+    // Don't process other var() inside of a varUsage.  That implies that the
+    // default is a var() too.  Also, don't process any var() inside of a
+    // varDefinition (they're just place holders until we've resolved all real
+    // usages.
+    if (!inUsage && !inVarDefinition && currentExpressions != null) {
+      var expressions = currentExpressions.expressions;
+      var index = expressions.indexOf(node);
+      assert(index >= 0);
+      var def = varDefs[node.name];
+      if (def != null) {
+        // Found a VarDefinition use it.
+        _resolveVarUsage(currentExpressions.expressions, index, def);
+      } else if (node.defaultValues.any((e) => e is VarUsage)) {
+        // Don't have a VarDefinition need to use default values resolve all
+        // default values.
+        var terminalDefaults = [];
+        for (var defaultValue in node.defaultValues) {
+          terminalDefaults.addAll(resolveUsageTerminal(defaultValue));
+        }
+        expressions.replaceRange(index, index + 1, terminalDefaults);
+      } else {
+        // No VarDefinition but default value is a terminal expression; use it.
+        expressions.replaceRange(index, index + 1, node.defaultValues);
+      }
+    }
+
+    inUsage = true;
+    super.visitVarUsage(node);
+    inUsage = false;
+  }
+
+  List<Expression> resolveUsageTerminal(VarUsage usage) {
+    var result = [];
+
+    var varDef = varDefs[usage.name];
+    var expressions;
+    if (varDef == null) {
+      // VarDefinition not found try the defaultValues.
+      expressions = usage.defaultValues;
+    } else {
+      // Use the VarDefinition found.
+      expressions = (varDef.expression as Expressions).expressions;
+    }
+
+    for (var expr in expressions) {
+      if (expr is VarUsage) {
+        // Get terminal value.
+        result.addAll(resolveUsageTerminal(expr));
+      }
+    }
+
+    // We're at a terminal just return the VarDefinition expression.
+    if (result.isEmpty && varDef != null) {
+      result = (varDef.expression as Expressions).expressions;
+    }
+
+    return result;
+  }
+
+  _resolveVarUsage(List<Expressions> expressions, int index,
+                   VarDefinition def) {
+    var defExpressions = (def.expression as Expressions).expressions;
+    expressions.replaceRange(index, index + 1, defExpressions);
+  }
+}
+
+/** Remove all var definitions. */
+class RemoveVarDefinitions extends Visitor {
+  void visitTree(StyleSheet tree) {
+    visitStyleSheet(tree);
+  }
+
+  void visitStyleSheet(StyleSheet ss) {
+    ss.topLevels.removeWhere((e) => e is VarDefinitionDirective);
+    super.visitStyleSheet(ss);
+  }
+
+  void visitDeclarationGroup(DeclarationGroup node) {
+    node.declarations.removeWhere((e) => e is VarDefinition);
+    super.visitDeclarationGroup(node);
+  }
+}
+
 /** Compute each CSS URI resource relative from the generated CSS file. */
 class UriVisitor extends Visitor {
   /**
@@ -195,10 +345,19 @@ class UriVisitor extends Visitor {
   UriVisitor._internal(this._pathToOriginalCss);
 
   void visitUriTerm(UriTerm node) {
+    // Don't touch URIs that have any scheme (http, etc.).
+    var uri = Uri.parse(node.text);
+    if (uri.domain != '') return;
+    if (uri.scheme != '' && uri.scheme != 'package') return;
+
     node.text = PathMapper.toUrl(
         path.normalize(path.join(_pathToOriginalCss, node.text)));
   }
 }
+
+List<UrlInfo> findImportsInStyleSheet(StyleSheet styleSheet, String packageRoot,
+                                      String inputPath) =>
+    (new CssImports(packageRoot, inputPath)..visitTree(styleSheet)).urlInfos;
 
 /**
  * Find any imports in the style sheet; normalize the style sheet href and
@@ -206,21 +365,137 @@ class UriVisitor extends Visitor {
  */
 class CssImports extends Visitor {
   final String packageRoot;
-  final FileInfo fileInfo;
+
+  /** Path to this file. */
+  final String inputPath;
 
   /** List of all imported style sheets. */
   final List<UrlInfo> urlInfos = [];
 
-  CssImports(this.packageRoot, this.fileInfo);
+  CssImports(this.packageRoot, this.inputPath);
 
   void visitTree(StyleSheet tree) {
     visitStyleSheet(tree);
   }
 
   void visitImportDirective(ImportDirective node) {
-    var urlInfo = UrlInfo.resolve(packageRoot, fileInfo.inputPath, node.import,
+    var urlInfo = UrlInfo.resolve(packageRoot, inputPath, node.import,
         node.span, isCss: true);
     if (urlInfo == null) return;
     urlInfos.add(urlInfo);
+  }
+}
+
+StyleSheet parseCss(String content, String sourcePath, Messages messages,
+                     CompilerOptions opts) {
+  if (content.trim().isEmpty) return null;
+
+  var errors = [];
+
+  // TODO(terry): Add --checked when fully implemented and error handling.
+  var stylesheet = css.parse(content, errors: errors, options:
+      [opts.warningsAsErrors ? '--warnings_as_errors' : '', 'memory']);
+
+  // Note: errors aren't fatal in HTML (unless strict mode is on).
+  // So just print them as warnings.
+  for (var e in errors) {
+    messages.warning(e.message, e.span);
+  }
+
+  return stylesheet;
+}
+
+/** Find terminal definition (non VarUsage implies real CSS value). */
+VarDefinition findTerminalVarDefinition(Map<String, VarDefinition> varDefs,
+                                        VarDefinition varDef) {
+  var expressions = varDef.expression as Expressions;
+  for (var expr in expressions.expressions) {
+    if (expr is VarUsage) {
+      var usageName = (expr as VarUsage).name;
+      var foundDef = varDefs[usageName];
+
+      // If foundDef is unknown check if defaultValues; if it exist then resolve
+      // to terminal value.
+      if (foundDef == null) {
+        // We're either a VarUsage or terminal definition if in varDefs;
+        // either way replace VarUsage with it's default value because the
+        // VarDefinition isn't found.
+        var defaultValues = (expr as VarUsage).defaultValues;
+        var replaceExprs = expressions.expressions;
+        assert(replaceExprs.length == 1);
+        replaceExprs.replaceRange(0, 1, defaultValues);
+        return varDef;
+      }
+      if (foundDef is VarDefinition) {
+        return findTerminalVarDefinition(varDefs, foundDef);
+      }
+    } else {
+      // Return real CSS property.
+      return varDef;
+    }
+  }
+
+  // Didn't point to a var definition that existed.
+  return varDef;
+}
+
+/**
+ * Find urls imported inside style tags under [info].  If [info] is a FileInfo
+ * then process only style tags in the body (don't process any style tags in a
+ * component).  If [info] is a ComponentInfo only process style tags inside of
+ * the element are processed.  For an [info] of type FileInfo [node] is the
+ * file's document and for an [info] of type ComponentInfo then [node] is the
+ * component's element tag.
+ */
+List<UrlInfo> findUrlsImported(LibraryInfo info, String inputPath,
+                               String packageRoot, Node node, Messages messages,
+                               CompilerOptions options) {
+  // Process any @imports inside of the <style> tag.
+  var styleProcessor = new CssStyleTag(packageRoot, info, inputPath,
+      messages, options);
+  styleProcessor.visit(node);
+  return styleProcessor.imports;
+}
+
+/* Process CSS inside of a style tag. */
+class CssStyleTag extends TreeVisitor {
+  final String _packageRoot;
+
+  /** Either a FileInfo or ComponentInfo. */
+  final LibraryInfo _info;
+  final Messages _messages;
+  final CompilerOptions _options;
+
+  /**
+   * Path of the declaring file, for a [info] of type FileInfo it's the file's
+   * path for a type ComponentInfo it's the declaring file path.
+   */
+  final String _inputPath;
+
+  /** List of @imports found. */
+  List<UrlInfo> imports = [];
+
+  CssStyleTag(this._packageRoot, this._info, this._inputPath, this._messages,
+      this._options);
+
+  void visitElement(Element node) {
+    // Don't process any style tags inside of element if we're processing a
+    // FileInfo.  The style tags inside of a component defintion will be
+    // processed when _info is a ComponentInfo.
+    if (node.tagName == 'element' && _info is FileInfo) return;
+    if (node.tagName == 'style') {
+      // Parse the contents of the scoped style tag.
+      var styleSheet = parseCss(node.nodes.single.value, _inputPath, _messages,
+          _options);
+      if (styleSheet != null) {
+        _info.styleSheets.add(styleSheet);
+
+        // Find all imports return list of @imports in this style tag.
+        var urlInfos = findImportsInStyleSheet(styleSheet, _packageRoot,
+            _inputPath);
+        imports.addAll(urlInfos);
+      }
+    }
+    super.visitElement(node);
   }
 }

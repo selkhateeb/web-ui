@@ -5,9 +5,15 @@
 /** Common definitions used for setting up the test environment. */
 library testing;
 
+import 'dart:async';
+import 'dart:io';
+
+import 'package:csslib/visitor.dart';
 import 'package:html5lib/dom.dart';
 import 'package:html5lib/parser.dart';
 import 'package:web_ui/src/analyzer.dart';
+import 'package:web_ui/src/compiler.dart';
+import 'package:web_ui/src/file_system.dart';
 import 'package:web_ui/src/info.dart';
 import 'package:web_ui/src/messages.dart';
 import 'package:web_ui/src/options.dart';
@@ -62,4 +68,43 @@ Map<String, FileInfo> analyzeFiles(List<SourceFile> files,
     analyzeFile(file, result, uniqueIds, messages);
   }
   return result;
+}
+
+Compiler createCompiler(Map files, Messages messages, {bool errors: false}) {
+  List baseOptions = ['--no-colors', '-o', 'out', 'index.html'];
+  if (errors) baseOptions.insert(0, '--warnings_as_errors');
+  var options = CompilerOptions.parse(baseOptions);
+  var fs = new MockFileSystem(files);
+  return new Compiler(fs, options, messages);
+}
+
+String prettyPrintCss(StyleSheet styleSheet) =>
+    ((new CssPrinter())..visitTree(styleSheet)).toString();
+
+/**
+ * Abstraction around file system access to work in a variety of different
+ * environments.
+ */
+class MockFileSystem extends FileSystem {
+  final Map _files;
+  final Map readCount = {};
+
+  MockFileSystem(this._files);
+
+  Future readTextOrBytes(String filename) => readText(filename);
+
+  Future<String> readText(String path) {
+    readCount[path] = readCount.putIfAbsent(path, () => 0) + 1;
+    var file = _files[path];
+    if (file != null) {
+      return new Future.value(file);
+    } else {
+      return new Future.error(
+          new FileIOException('MockFileSystem: $path not found'));
+    }
+  }
+
+  // Compiler doesn't call these
+  void writeString(String outfile, String text) {}
+  Future flush() {}
 }
