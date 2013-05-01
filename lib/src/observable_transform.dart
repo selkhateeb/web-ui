@@ -1,4 +1,4 @@
-// Copyright (c) 2012, the Dart project authors.  Please see the AUTHORS file
+// Copyright (c) 2013, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
@@ -94,14 +94,17 @@ void transformClass(ClassDeclaration cls, TextEditTransaction code,
 
 /** Adds "with Observable" and associated implementation. */
 void mixinObservable(ClassDeclaration cls, TextEditTransaction code) {
+  // Note: we need to be careful to put the with clause after extends, but
+  // before implements clause.
   if (cls.withClause != null) {
     var pos = cls.withClause.end;
     code.edit(pos, pos, ', Observable');
   } else if (cls.extendsClause != null) {
-    var pos = cls.leftBracket.offset;
+    var pos = cls.extendsClause.end;
     code.edit(pos, pos, ' with Observable ');
   } else {
-    var pos = cls.leftBracket.offset;
+    var params = cls.typeParameters;
+    var pos =  params != null ? params.end : cls.name.end;
     code.edit(pos, pos, ' extends Observable ');
   }
 }
