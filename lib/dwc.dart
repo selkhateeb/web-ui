@@ -78,7 +78,7 @@ Future<CompilerResult> run(List<String> args, {bool printTime}) {
     var res;
     return compiler.run()
       .then((_) {
-        var success = messages.messages.any((m) => m.level != Level.SEVERE);
+        var success = messages.messages.every((m) => m.level != Level.SEVERE);
         var msgs = options.jsonFormat
             ? messages.messages.map((m) => m.toJson())
             : messages.messages.map((m) => m.toString());
