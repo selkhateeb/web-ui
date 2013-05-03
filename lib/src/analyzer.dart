@@ -8,7 +8,7 @@
  */
 library analyzer;
 
-import 'package:csslib/parser.dart' as Css;
+import 'package:csslib/parser.dart' as css;
 import 'package:csslib/visitor.dart' show StyleSheet, treeToDebugString, Visitor, Expressions, VarDefinition;
 import 'package:html5lib/dom.dart';
 import 'package:html5lib/dom_parsing.dart';
@@ -1100,7 +1100,7 @@ class _AnalyzerCss {
     var styleSheets = _dependencies(libraryInfo).toList();
 
     var errors = [];
-    Css.analyze(styleSheets, errors: errors, options:
+    css.analyze(styleSheets, errors: errors, options:
       [_warningsAsErrors ? '--warnings_as_errors' : '', 'memory']);
 
     // Print errors as warnings.

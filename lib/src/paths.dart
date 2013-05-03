@@ -141,7 +141,7 @@ class PathMapper {
    * [target] is not under [_baseDir].
    */
   String transformUrl(String src, String target) {
-    if (new Uri.fromString(target).isAbsolute) return target;
+    if (Uri.parse(target).isAbsolute) return target;
     if (path.isAbsolute(target)) return target;
     return toUrl(path.normalize(path.relative(
           path.join(path.dirname(src), target), from: outputDirPath(src))));

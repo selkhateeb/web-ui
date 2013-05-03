@@ -37,7 +37,7 @@ void parse(js.Proxy sourcePagePort, String sourceUri) {
   // TODO(jacobr): we need to send error messages back to sourcePagePort.
   js.retain(sourcePagePort);
   print("Processing: $sourceUri");
-  Uri uri = new Uri.fromString(sourceUri);
+  Uri uri = Uri.parse(sourceUri);
   fileSystem = new BrowserFileSystem(uri.scheme, sourcePagePort);
   // TODO(jacobr): provide a way to pass in options.
   var options = CompilerOptions.parse(['--no-colors', uri.path]);
