@@ -20,8 +20,8 @@ BSD-style license that can be found in the LICENSE file.
       import 'package:unittest/unittest.dart';
       class Test extends WebComponent {
         inserted() {
-          var pre = _root.query('pre');
-          expect(pre, isNotNull, reason: '_root.query should find "pre"');
+          var pre = getShadowRoot('x-test').query('pre');
+          expect(pre, isNotNull, reason: 'shadow root query should find "pre"');
           pre.text = 'PASS';
         }
       }

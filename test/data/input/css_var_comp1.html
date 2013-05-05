@@ -56,7 +56,7 @@ TODO(terry): apply-author-styles needs to be handled the default is not to apply
           bool get isFlipper => type == 'flipper';
 
           void inserted() {
-            var elem = _root.query("#${_css['#input-1']}");
+            var elem = getShadowRoot('x-comp1').query("#${_css['#input-1']}");
             elem.value = "Testing";
             if (isFlipper) _flip = true;
             super.inserted();

@@ -136,7 +136,7 @@ class _Analyzer extends TreeVisitor {
     if (node.tagName == 'body' || (_currentInfo is ComponentInfo
           && (_currentInfo as ComponentInfo).template == node)) {
       info.isRoot = true;
-      info.identifier = '_root';
+      info.identifier = '__root';
     }
 
     var lastInfo = _currentInfo;
