@@ -56,6 +56,9 @@ class CompilerOptions {
   /** Emit debugging information for CSS processing. */
   final bool debugCss;
 
+  /** Whether to analyze the input for warnings without generating any code. */
+  final bool analysisOnly;
+
   // We could make this faster, if it ever matters.
   factory CompilerOptions() => parse(['']);
 
@@ -73,6 +76,7 @@ class CompilerOptions {
       componentsOnly = args['components_only'],
       processCss = args['css'],
       debugCss = args['debug_css'],
+      analysisOnly = args['analysis-only'],
       inputFile = args.rest.length > 0 ? args.rest[0] : null;
 
   // TODO(sigmund): convert all flags to use dashes instead of underscores
@@ -108,6 +112,8 @@ class CompilerOptions {
           defaultsTo: true)
       ..addFlag('debug_css', help: 'Debug information for CSS polyfill',
           defaultsTo: false, negatable: false)
+      ..addFlag('analysis-only', help: 'Don\'t emit code, just show warnings '
+          'and errors (unset by default)', defaultsTo: false, negatable: false)
       ..addOption('out', abbr: 'o', help: 'Directory where to generate files'
           ' (defaults to the same directory as the source file)')
       ..addOption('basedir', help: 'Base directory where to find all source '

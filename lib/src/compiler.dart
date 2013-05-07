@@ -109,7 +109,7 @@ class Compiler {
       _analyze();
       // TODO(jmesserly): need to go through our errors, and figure out if some
       // of them should be warnings instead.
-      if (_messages.hasErrors) return;
+      if (_messages.hasErrors || options.analysisOnly) return;
       _transformDart();
       _emit();
     });
