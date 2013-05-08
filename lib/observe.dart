@@ -9,7 +9,7 @@
  * able to observe expressions and not just objects, so long as the expressions
  * are computed from observable objects.
  *
- * See the [observable] annotation and the [observe] function.
+ * See the `observable` annotation and the `observe` function.
  */
 // Note: one intentional difference from Harmony Object.observe is that our
 // change batches are tracked on a per-observed expression basis, instead of

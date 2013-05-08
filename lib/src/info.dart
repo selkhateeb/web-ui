@@ -582,7 +582,7 @@ class TemplateInfo extends ElementInfo {
 /**
  * Specifies the action to take on a particular event. Some actions need to read
  * attributes from the DOM element that has the event listener (e.g. two way
- * bindings do this). [elementVarName] stores a reference to this element.
+ * bindings do this). [elemVarName] stores a reference to this element.
  * It is generated outside of the analyzer (in the emitter), so it is passed
  * here as an argument.
  */

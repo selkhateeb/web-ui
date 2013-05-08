@@ -181,7 +181,7 @@ class ChangeRecord {
  * effect. If changes are delivered by deliverChangesSync, they will not be
  * delivered again asynchronously, unless the value is changed again.
  *
- * Any errors thrown by [expression] and [callback] will be caught and sent to
+ * Any errors thrown by [value] and [callback] will be caught and sent to
  * [onObserveUnhandledError].
  */
 // TODO(jmesserly): debugName is here to workaround http://dartbug.com/8419.
@@ -217,7 +217,7 @@ ChangeUnobserver observe(value, ChangeObserver callback, [String debugName]) {
  *
  * Returns a function that can be used to stop observation.
  * Calling this makes it possible for the garbage collector to reclaim memory
- * associated with the observation and prevents further calls to [callback].
+ * associated with the observation and prevents further calls to [observer].
  *
  * You can force a synchronous change delivery at any time by calling
  * [deliverChangesSync]. Calling this method if there are no changes has no

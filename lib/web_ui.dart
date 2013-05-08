@@ -460,15 +460,11 @@ abstract class WebComponent implements Element {
     host.pseudo = value;
   }
 
-  ShadowRoot get shadowRoot {
-    if (_realShadowRoot) return host.shadowRoot;
-    if (_shadowRoots != null && !_shadowRoots.isEmpty) {
-      return _shadowRoots.first;
-    }
-    // After applying composeChildren the shadow roots "tree stack" will be
-    // empty, and 'this' is the closest thing to the shadowRoot.
-    return this;
-  }
+  // Note: we are not polyfilling the shadow root here. This will be fixed when
+  // we migrate to the JS Shadow DOM polyfills. You can still use getShadowRoot
+  // to retrieve a node that behaves as the shadow root when Shadow DOM is not
+  // enabled.
+  ShadowRoot get shadowRoot => host.shadowRoot;
 
   void blur() { host.blur(); }
 

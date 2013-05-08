@@ -100,7 +100,7 @@ void updateCssClass(Element elem, bool addClasses, classes) {
 }
 
 /**
- * Updates the CSS classes based on the [changes] that were made to an
+ * Updates the CSS classes based on the [change] that was made to an
  * [ObservableList].
  */
 void changeCssClasses(elem, ChangeRecord change) {
@@ -187,7 +187,7 @@ void updateStyle(Element elem, oldValue, newValue) {
 }
 
 /**
- * Ensure that [usiString] is a safe URI. Otherwise, return a '#' URL.
+ * Ensure that [uri] is a safe URI. Otherwise, return a '#' URL.
  *
  * The logic in this method was based on the GWT implementation located at:
  * http://code.google.com/p/google-web-toolkit/source/browse/trunk/user/src/com/google/gwt/safehtml/shared/UriUtils.java

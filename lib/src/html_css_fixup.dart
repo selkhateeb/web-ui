@@ -21,9 +21,6 @@ import 'utils.dart';
 /**
  *  If processCss is enabled, prefix any component's HTML attributes for id or
  *  class to reference the mangled CSS class name or id.
- *
- *  Adds prefix error/warning messages to [messages], if [messages] is
- *  supplied.
  */
 void fixupHtmlCss(FileInfo fileInfo, CompilerOptions options) {
   // Walk the HTML tree looking for class names or id that are in our parsed
