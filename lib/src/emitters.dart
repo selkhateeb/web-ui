@@ -536,6 +536,8 @@ class WebComponentEmitter extends RecursiveEmitter {
         ..addLine('/** CSS class constants. */')
         ..addLine('${createCssSelectorsDefinition(info, cssPolyfill)}')
         ..addLine('')
+        ..addLine('/** This field is deprecated, use getShadowRoot instead. */')
+        ..addLine('get _root => getShadowRoot("${info.tagName}");')
         ..add(_context.statics)
         ..add(_context.declarations)
         ..addLine('')
