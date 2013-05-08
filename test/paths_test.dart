@@ -21,31 +21,32 @@ main() {
       test('mangle automatic', () {
         var pathMapper = _newPathMapper('a', 'a', false);
         var file = _mockFile('a/b.dart', pathMapper);
-        expect(file.dartCodePath, 'a/b.dart');
-        expect(pathMapper.outputPath(file.dartCodePath, '.dart'), 'a/_b.dart.dart');
+        expect(file.dartCodeUrl.resolvedPath, 'a/b.dart');
+        expect(pathMapper.outputPath(file.dartCodeUrl.resolvedPath, '.dart'),
+            'a/_b.dart.dart');
       });
 
       test('within packages/', () {
         var pathMapper = _newPathMapper('a', 'a', false);
         var file = _mockFile('a/packages/b.dart', pathMapper);
-        expect(file.dartCodePath, 'a/packages/b.dart');
-        expect(pathMapper.outputPath(file.dartCodePath, '.dart'),
+        expect(file.dartCodeUrl.resolvedPath, 'a/packages/b.dart');
+        expect(pathMapper.outputPath(file.dartCodeUrl.resolvedPath, '.dart'),
             'a/_from_packages/_b.dart.dart');
       });
     });
 
-    group('relativeUrl', () {
+    group('importUrlFor', () {
       test('simple pathMapper', () {
         var pathMapper = _newPathMapper('a', 'a', false);
         var file1 = _mockFile('a/b.dart', pathMapper);
         var file2 = _mockFile('a/c/d.dart', pathMapper);
         var file3 = _mockFile('a/e/f.dart', pathMapper);
-        expect(pathMapper.relativeUrl(file1, file2), 'c/_d.dart.dart');
-        expect(pathMapper.relativeUrl(file1, file3), 'e/_f.dart.dart');
-        expect(pathMapper.relativeUrl(file2, file1), '../_b.dart.dart');
-        expect(pathMapper.relativeUrl(file2, file3), '../e/_f.dart.dart');
-        expect(pathMapper.relativeUrl(file3, file2), '../c/_d.dart.dart');
-        expect(pathMapper.relativeUrl(file3, file1), '../_b.dart.dart');
+        expect(pathMapper.importUrlFor(file1, file2), 'c/_d.dart.dart');
+        expect(pathMapper.importUrlFor(file1, file3), 'e/_f.dart.dart');
+        expect(pathMapper.importUrlFor(file2, file1), '../_b.dart.dart');
+        expect(pathMapper.importUrlFor(file2, file3), '../e/_f.dart.dart');
+        expect(pathMapper.importUrlFor(file3, file2), '../c/_d.dart.dart');
+        expect(pathMapper.importUrlFor(file3, file1), '../_b.dart.dart');
       });
 
       test('include packages/', () {
@@ -53,13 +54,28 @@ main() {
         var file1 = _mockFile('a/b.dart', pathMapper);
         var file2 = _mockFile('a/c/d.dart', pathMapper);
         var file3 = _mockFile('a/packages/f.dart', pathMapper);
-        expect(pathMapper.relativeUrl(file1, file2), 'c/_d.dart.dart');
-        expect(pathMapper.relativeUrl(file1, file3), '_from_packages/_f.dart.dart');
-        expect(pathMapper.relativeUrl(file2, file1), '../_b.dart.dart');
-        expect(pathMapper.relativeUrl(file2, file3),
+        expect(pathMapper.importUrlFor(file1, file2), 'c/_d.dart.dart');
+        expect(pathMapper.importUrlFor(file1, file3),
+            '_from_packages/_f.dart.dart');
+        expect(pathMapper.importUrlFor(file2, file1), '../_b.dart.dart');
+        expect(pathMapper.importUrlFor(file2, file3),
             '../_from_packages/_f.dart.dart');
-        expect(pathMapper.relativeUrl(file3, file2), '../c/_d.dart.dart');
-        expect(pathMapper.relativeUrl(file3, file1), '../_b.dart.dart');
+        expect(pathMapper.importUrlFor(file3, file2), '../c/_d.dart.dart');
+        expect(pathMapper.importUrlFor(file3, file1), '../_b.dart.dart');
+      });
+
+      test('packages, but no rewrite', () {
+        var pathMapper = _newPathMapper('a', 'a', false, rewriteUrls: false);
+        var file1 = _mockFile('a/b.dart', pathMapper);
+        var file2 = _mockFile('a/c/d.dart', pathMapper);
+        var file3 = _mockFile('a/packages/c/f.dart', pathMapper,
+            url: 'package:e/f.dart');
+        expect(pathMapper.importUrlFor(file1, file2), 'c/_d.dart.dart');
+        expect(pathMapper.importUrlFor(file1, file3),
+          'package:e/_f.dart.dart');
+        expect(pathMapper.importUrlFor(file2, file1), '../_b.dart.dart');
+        expect(pathMapper.importUrlFor(file2, file3),
+            'package:e/_f.dart.dart');
       });
 
       test('windows paths', () {
@@ -69,14 +85,14 @@ main() {
           var file1 = _mockFile('a\\b.dart', pathMapper);
           var file2 = _mockFile('a\\c\\d.dart', pathMapper);
           var file3 = _mockFile('a\\packages\\f.dart', pathMapper);
-          expect(pathMapper.relativeUrl(file1, file2), 'c/_d.dart.dart');
-          expect(pathMapper.relativeUrl(file1, file3),
+          expect(pathMapper.importUrlFor(file1, file2), 'c/_d.dart.dart');
+          expect(pathMapper.importUrlFor(file1, file3),
               '_from_packages/_f.dart.dart');
-          expect(pathMapper.relativeUrl(file2, file1), '../_b.dart.dart');
-          expect(pathMapper.relativeUrl(file2, file3),
+          expect(pathMapper.importUrlFor(file2, file1), '../_b.dart.dart');
+          expect(pathMapper.importUrlFor(file2, file3),
               '../_from_packages/_f.dart.dart');
-          expect(pathMapper.relativeUrl(file3, file2), '../c/_d.dart.dart');
-          expect(pathMapper.relativeUrl(file3, file1), '../_b.dart.dart');
+          expect(pathMapper.importUrlFor(file3, file2), '../c/_d.dart.dart');
+          expect(pathMapper.importUrlFor(file3, file1), '../_b.dart.dart');
         } finally {
           utils.path = new path.Builder();
         }
@@ -91,11 +107,13 @@ main() {
       expect(pathMapper.transformUrl(file1, '/a.dart'), '/a.dart');
       expect(pathMapper.transformUrl(file1, 'c.dart'), 'c.dart');
       expect(pathMapper.transformUrl(file1, '../c/d.dart'), '../c/d.dart');
-      expect(pathMapper.transformUrl(file1, 'packages/c.dart'), 'packages/c.dart');
+      expect(pathMapper.transformUrl(file1, 'packages/c.dart'),
+          'packages/c.dart');
       expect(pathMapper.transformUrl(file2, 'e.css'), 'e.css');
       expect(pathMapper.transformUrl(file2, '../c/e.css'), 'e.css');
       expect(pathMapper.transformUrl(file2, '../q/e.css'), '../q/e.css');
-      expect(pathMapper.transformUrl(file2, 'packages/c.css'), 'packages/c.css');
+      expect(pathMapper.transformUrl(file2, 'packages/c.css'),
+          'packages/c.css');
       expect(pathMapper.transformUrl(file2, '../packages/c.css'),
           '../packages/c.css');
     });
@@ -119,47 +137,48 @@ main() {
       test('no force mangle', () {
         var pathMapper = _newPathMapper('a', 'out', false);
         var file = _mockFile('a/b.dart', pathMapper);
-        expect(file.dartCodePath, 'a/b.dart');
-        expect(pathMapper.outputPath(file.dartCodePath, '.dart'), 'out/b.dart');
+        expect(file.dartCodeUrl.resolvedPath, 'a/b.dart');
+        expect(pathMapper.outputPath(file.dartCodeUrl.resolvedPath, '.dart'),
+            'out/b.dart');
       });
 
       test('force mangling', () {
         var pathMapper = _newPathMapper('a', 'out', true);
         var file = _mockFile('a/b.dart', pathMapper);
-        expect(file.dartCodePath, 'a/b.dart');
-        expect(pathMapper.outputPath(file.dartCodePath, '.dart'),
+        expect(file.dartCodeUrl.resolvedPath, 'a/b.dart');
+        expect(pathMapper.outputPath(file.dartCodeUrl.resolvedPath, '.dart'),
             'out/_b.dart.dart');
       });
 
       test('within packages/, no mangle', () {
         var pathMapper = _newPathMapper('a', 'out', false);
         var file = _mockFile('a/packages/b.dart', pathMapper);
-        expect(file.dartCodePath, 'a/packages/b.dart');
-        expect(pathMapper.outputPath(file.dartCodePath, '.dart'),
+        expect(file.dartCodeUrl.resolvedPath, 'a/packages/b.dart');
+        expect(pathMapper.outputPath(file.dartCodeUrl.resolvedPath, '.dart'),
             'out/_from_packages/b.dart');
       });
 
       test('within packages/, mangle', () {
         var pathMapper = _newPathMapper('a', 'out', true);
         var file = _mockFile('a/packages/b.dart', pathMapper);
-        expect(file.dartCodePath, 'a/packages/b.dart');
-        expect(pathMapper.outputPath(file.dartCodePath, '.dart'),
+        expect(file.dartCodeUrl.resolvedPath, 'a/packages/b.dart');
+        expect(pathMapper.outputPath(file.dartCodeUrl.resolvedPath, '.dart'),
             'out/_from_packages/_b.dart.dart');
       });
     });
 
-    group('relativeUrl', (){
+    group('importUrlFor', (){
       test('simple paths, no mangle', () {
         var pathMapper = _newPathMapper('a', 'out', false);
         var file1 = _mockFile('a/b.dart', pathMapper);
         var file2 = _mockFile('a/c/d.dart', pathMapper);
         var file3 = _mockFile('a/e/f.dart', pathMapper);
-        expect(pathMapper.relativeUrl(file1, file2), 'c/d.dart');
-        expect(pathMapper.relativeUrl(file1, file3), 'e/f.dart');
-        expect(pathMapper.relativeUrl(file2, file1), '../b.dart');
-        expect(pathMapper.relativeUrl(file2, file3), '../e/f.dart');
-        expect(pathMapper.relativeUrl(file3, file2), '../c/d.dart');
-        expect(pathMapper.relativeUrl(file3, file1), '../b.dart');
+        expect(pathMapper.importUrlFor(file1, file2), 'c/d.dart');
+        expect(pathMapper.importUrlFor(file1, file3), 'e/f.dart');
+        expect(pathMapper.importUrlFor(file2, file1), '../b.dart');
+        expect(pathMapper.importUrlFor(file2, file3), '../e/f.dart');
+        expect(pathMapper.importUrlFor(file3, file2), '../c/d.dart');
+        expect(pathMapper.importUrlFor(file3, file1), '../b.dart');
       });
 
       test('simple paths, mangle', () {
@@ -167,39 +186,44 @@ main() {
         var file1 = _mockFile('a/b.dart', pathMapper);
         var file2 = _mockFile('a/c/d.dart', pathMapper);
         var file3 = _mockFile('a/e/f.dart', pathMapper);
-        expect(pathMapper.relativeUrl(file1, file2), 'c/_d.dart.dart');
-        expect(pathMapper.relativeUrl(file1, file3), 'e/_f.dart.dart');
-        expect(pathMapper.relativeUrl(file2, file1), '../_b.dart.dart');
-        expect(pathMapper.relativeUrl(file2, file3), '../e/_f.dart.dart');
-        expect(pathMapper.relativeUrl(file3, file2), '../c/_d.dart.dart');
-        expect(pathMapper.relativeUrl(file3, file1), '../_b.dart.dart');
+        expect(pathMapper.importUrlFor(file1, file2), 'c/_d.dart.dart');
+        expect(pathMapper.importUrlFor(file1, file3), 'e/_f.dart.dart');
+        expect(pathMapper.importUrlFor(file2, file1), '../_b.dart.dart');
+        expect(pathMapper.importUrlFor(file2, file3), '../e/_f.dart.dart');
+        expect(pathMapper.importUrlFor(file3, file2), '../c/_d.dart.dart');
+        expect(pathMapper.importUrlFor(file3, file1), '../_b.dart.dart');
       });
 
       test('include packages/, no mangle', () {
         var pathMapper = _newPathMapper('a', 'out', false);
         var file1 = _mockFile('a/b.dart', pathMapper);
         var file2 = _mockFile('a/c/d.dart', pathMapper);
-        var file3 = _mockFile('a/packages/f.dart', pathMapper);
-        expect(pathMapper.relativeUrl(file1, file2), 'c/d.dart');
-        expect(pathMapper.relativeUrl(file1, file3), '_from_packages/f.dart');
-        expect(pathMapper.relativeUrl(file2, file1), '../b.dart');
-        expect(pathMapper.relativeUrl(file2, file3), '../_from_packages/f.dart');
-        expect(pathMapper.relativeUrl(file3, file2), '../c/d.dart');
-        expect(pathMapper.relativeUrl(file3, file1), '../b.dart');
+        var file3 = _mockFile('a/packages/e/f.dart', pathMapper,
+            url: 'package:e/f.dart');
+        expect(pathMapper.importUrlFor(file1, file2), 'c/d.dart');
+        expect(pathMapper.importUrlFor(file1, file3),
+            '_from_packages/e/f.dart');
+        expect(pathMapper.importUrlFor(file2, file1), '../b.dart');
+        expect(pathMapper.importUrlFor(file2, file3),
+            '../_from_packages/e/f.dart');
+        expect(pathMapper.importUrlFor(file3, file2), '../../c/d.dart');
+        expect(pathMapper.importUrlFor(file3, file1), '../../b.dart');
       });
 
       test('include packages/, mangle', () {
         var pathMapper = _newPathMapper('a', 'out', true);
         var file1 = _mockFile('a/b.dart', pathMapper);
         var file2 = _mockFile('a/c/d.dart', pathMapper);
-        var file3 = _mockFile('a/packages/f.dart', pathMapper);
-        expect(pathMapper.relativeUrl(file1, file2), 'c/_d.dart.dart');
-        expect(pathMapper.relativeUrl(file1, file3), '_from_packages/_f.dart.dart');
-        expect(pathMapper.relativeUrl(file2, file1), '../_b.dart.dart');
-        expect(pathMapper.relativeUrl(file2, file3),
-            '../_from_packages/_f.dart.dart');
-        expect(pathMapper.relativeUrl(file3, file2), '../c/_d.dart.dart');
-        expect(pathMapper.relativeUrl(file3, file1), '../_b.dart.dart');
+        var file3 = _mockFile('a/packages/e/f.dart', pathMapper,
+            url: 'package:e/f.dart');
+        expect(pathMapper.importUrlFor(file1, file2), 'c/_d.dart.dart');
+        expect(pathMapper.importUrlFor(file1, file3),
+          '_from_packages/e/_f.dart.dart');
+        expect(pathMapper.importUrlFor(file2, file1), '../_b.dart.dart');
+        expect(pathMapper.importUrlFor(file2, file3),
+            '../_from_packages/e/_f.dart.dart');
+        expect(pathMapper.importUrlFor(file3, file2), '../../c/_d.dart.dart');
+        expect(pathMapper.importUrlFor(file3, file1), '../../_b.dart.dart');
       });
 
       test('windows paths', () {
@@ -209,14 +233,14 @@ main() {
           var file1 = _mockFile('a\\b.dart', pathMapper);
           var file2 = _mockFile('a\\c\\d.dart', pathMapper);
           var file3 = _mockFile('a\\packages\\f.dart', pathMapper);
-          expect(pathMapper.relativeUrl(file1, file2), 'c/_d.dart.dart');
-          expect(pathMapper.relativeUrl(file1, file3),
+          expect(pathMapper.importUrlFor(file1, file2), 'c/_d.dart.dart');
+          expect(pathMapper.importUrlFor(file1, file3),
               '_from_packages/_f.dart.dart');
-          expect(pathMapper.relativeUrl(file2, file1), '../_b.dart.dart');
-          expect(pathMapper.relativeUrl(file2, file3),
+          expect(pathMapper.importUrlFor(file2, file1), '../_b.dart.dart');
+          expect(pathMapper.importUrlFor(file2, file3),
               '../_from_packages/_f.dart.dart');
-          expect(pathMapper.relativeUrl(file3, file2), '../c/_d.dart.dart');
-          expect(pathMapper.relativeUrl(file3, file1), '../_b.dart.dart');
+          expect(pathMapper.importUrlFor(file3, file2), '../c/_d.dart.dart');
+          expect(pathMapper.importUrlFor(file3, file1), '../_b.dart.dart');
         } finally {
           utils.path = new path.Builder();
         }
@@ -257,7 +281,8 @@ main() {
       test('input in packages/', () {
         var pathMapper = _newPathMapper('a', 'out', true);
         var file = 'a/packages/e.html';
-        expect(pathMapper.transformUrl(file, 'e.css'), '../../a/packages/e.css');
+        expect(pathMapper.transformUrl(file, 'e.css'),
+            '../../a/packages/e.css');
         expect(pathMapper.transformUrl(file, '../packages/e.css'),
             '../../a/packages/e.css');
         expect(pathMapper.transformUrl(file, '../q/e.css'), '../../a/q/e.css');
@@ -268,11 +293,13 @@ main() {
   });
 }
 
-_newPathMapper(String baseDir, String outDir, bool forceMangle) =>
-  new PathMapper(baseDir, outDir, 'packages', forceMangle);
+_newPathMapper(String baseDir, String outDir, bool forceMangle,
+    {bool rewriteUrls: true}) =>
+  new PathMapper(baseDir, outDir, 'packages', forceMangle, rewriteUrls);
 
-_mockFile(String filePath, PathMapper pathMapper) {
-  var file = new FileInfo(filePath);
+_mockFile(String filePath, PathMapper pathMapper, {String url}) {
+  var file = new FileInfo(new UrlInfo(
+        url == null ? filePath : url, filePath, null));
   file.outputFilename = pathMapper.mangle(
       utils.path.basename(filePath), '.dart', false);
   return file;

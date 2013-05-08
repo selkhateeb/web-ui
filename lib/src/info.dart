@@ -59,7 +59,7 @@ abstract class LibraryInfo extends Hashable implements LibrarySummary {
   LibraryInfo htmlFile;
 
   /** File where the top-level code was defined. */
-  String get dartCodePath;
+  UrlInfo get dartCodeUrl;
 
   /**
    * Name of the file that will hold any generated Dart code for this library
@@ -98,7 +98,7 @@ abstract class LibraryInfo extends Hashable implements LibrarySummary {
 /** Information extracted at the file-level. */
 class FileInfo extends LibraryInfo implements HtmlFileSummary {
   /** Relative path to this file from the compiler's base directory. */
-  final String inputPath;
+  final UrlInfo inputUrl;
 
   /**
    * Whether this file should be treated as the entry point of the web app, i.e.
@@ -110,11 +110,11 @@ class FileInfo extends LibraryInfo implements HtmlFileSummary {
 
   // TODO(terry): Ensure that that the libraryName is a valid identifier:
   //              a..z || A..Z || _ [a..z || A..Z || 0..9 || _]*
-  String get libraryName => path.basename(inputPath).replaceAll('.', '_');
+  String get libraryName =>
+      path.basename(inputUrl.resolvedPath).replaceAll('.', '_');
 
   /** File where the top-level code was defined. */
-  String get dartCodePath => externalFile != null
-      ? externalFile.resolvedPath : inputPath;
+  UrlInfo get dartCodeUrl => externalFile != null ? externalFile : inputUrl;
 
   /**
    * All custom element definitions in this file. This may contain duplicates.
@@ -139,7 +139,7 @@ class FileInfo extends LibraryInfo implements HtmlFileSummary {
   /** Root is associated with the body info. */
   ElementInfo bodyInfo;
 
-  FileInfo(this.inputPath, [this.isEntryPoint = false]);
+  FileInfo(this.inputUrl, [this.isEntryPoint = false]);
 
   /**
    * Query for an ElementInfo matching the provided [tag], starting from the
@@ -188,8 +188,8 @@ class ComponentInfo extends LibraryInfo implements ComponentSummary {
   final Node template;
 
   /** File where this component was defined. */
-  String get dartCodePath => externalFile != null
-      ? externalFile.resolvedPath : declaringFile.inputPath;
+  UrlInfo get dartCodeUrl => externalFile != null
+      ? externalFile : declaringFile.inputUrl;
 
   /**
    * True if [tagName] was defined by more than one component. If this happened
@@ -255,7 +255,7 @@ class ComponentInfo extends LibraryInfo implements ComponentSummary {
   }
 
   String toString() => '#<ComponentInfo $tagName '
-      '${inlinedCode != null ? "inline" : "from $dartCodePath"}>';
+      '${inlinedCode != null ? "inline" : "from ${dartCodeUrl.resolvedPath}"}>';
 }
 
 /** Base tree visitor for the Analyzer infos. */
@@ -621,36 +621,55 @@ class _QueryInfo extends InfoVisitor {
  * reporting errors.
  */
 class UrlInfo {
+  /** Original url. */
+  final String url;
+
   /** Path that the URL points to. */
   final String resolvedPath;
 
   /** Original source location where the URL was extracted from. */
   final Span sourceSpan;
 
-  UrlInfo(this.resolvedPath, this.sourceSpan);
+  UrlInfo(this.url, this.resolvedPath, this.sourceSpan);
 
-  /** Resolve a path from an [href] found in [filePath]. */
-  static UrlInfo resolve(String packageRoot,
-                         String filePath,
-                         String href,
-                         Span span,
-                         {bool isCss: false}) {
-    if (isCss) {
-      var uri = Uri.parse(href);
-      if (uri.domain != '') return null;
-      if (uri.scheme != '' && uri.scheme != 'package') return null;
+  /**
+   * Resolve a path from an [url] found in a file located at [inputUrl].
+   * Returns null for absolute [urls]. Unless [ignoreAbsolute] is true, reports
+   * an error message if the url is an absolute url.
+   */
+  static UrlInfo resolve(String url, UrlInfo inputUrl, Span span,
+      String packageRoot, Messages messages, {bool ignoreAbsolute: false}) {
+
+    var uri = Uri.parse(url);
+    if (uri.domain != '' || (uri.scheme != '' && uri.scheme != 'package')) {
+      if (!ignoreAbsolute) {
+        messages.error('absolute paths not allowed here: "$url"', span);
+      }
+      return null;
     }
 
-    var hrefTarget;
-    if (href.startsWith('package:')) {
-      hrefTarget = path.join(packageRoot, href.substring(8));
-    } else if (path.isAbsolute(href)) {
-      hrefTarget = href;
+    var target;
+    if (url.startsWith('package:')) {
+      target = path.join(packageRoot, url.substring(8));
+    } else if (path.isAbsolute(url)) {
+      if (!ignoreAbsolute) {
+        messages.error('absolute paths not allowed here: "$url"', span);
+      }
+      return null;
     } else {
-      hrefTarget = path.join(path.dirname(filePath), href);
+      target = path.join(path.dirname(inputUrl.resolvedPath), url);
+      url = pathToUrl(path.normalize(path.join(
+          path.dirname(inputUrl.url), url)));
     }
-    hrefTarget = path.normalize(hrefTarget);
+    target = path.normalize(target);
 
-    return new UrlInfo(hrefTarget, span);
+    return new UrlInfo(url, target, span);
   }
+
+  bool operator ==(UrlInfo other) =>
+      url == other.url && resolvedPath == other.resolvedPath;
+
+  int get hashCode => resolvedPath.hashCode;
+
+  String toString() => "#<UrlInfo url: $url, resolvedPath: $resolvedPath>";
 }

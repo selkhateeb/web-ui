@@ -13,7 +13,7 @@ import 'dart:uri';
 import 'info.dart' show UrlInfo;
 import 'messages.dart';
 import 'summary.dart';
-import 'utils.dart' show path;
+import 'utils.dart' show path, pathToUrl;
 
 /**
  * Stores information about paths and computes mappings between input and output
@@ -38,11 +38,15 @@ class PathMapper {
   /** Whether to add prefixes and to output file names. */
   final bool _mangleFilenames;
 
+  final bool _rewriteUrls;
+
+  bool get _rewritePackageImports => _rewriteUrls || !_mangleFilenames;
+
   /** Default prefix added to all filenames. */
   static const String _DEFAULT_PREFIX = '_';
 
   PathMapper(String baseDir, String outputDir, this.packageRoot,
-      bool forceMangle)
+      bool forceMangle, this._rewriteUrls)
       : _baseDir = baseDir,
         _outputDir = outputDir,
         _mangleFilenames = forceMangle || (baseDir == outputDir);
@@ -89,7 +93,8 @@ class PathMapper {
 
   /** The path to the output file corresponding to [info]. */
   String outputLibraryPath(LibrarySummary lib) =>
-      path.join(outputDirPath(lib.dartCodePath), lib.outputFilename);
+      path.join(outputDirPath(lib.dartCodeUrl.resolvedPath),
+          lib.outputFilename);
 
   /** The corresponding output directory for [input]'s directory. */
   String outputDirPath(String input) {
@@ -114,21 +119,27 @@ class PathMapper {
   String _rewritePackages(String outputPath) {
     // TODO(jmesserly): this should match against packageRoot instead.
     if (!outputPath.contains('packages')) return outputPath;
-    var segments = path.split(outputPath).map(
-        (segment) => segment == 'packages' ? '_from_packages' : segment);
-    return path.joinAll(segments);
+    if (!_rewritePackageImports) return outputPath;
+    var segments = path.split(outputPath);
+    return path.joinAll(
+        segments.map((s) => s == 'packages' ? '_from_packages' : s));
   }
 
   /**
-   * Returns a relative path to import/export the output library represented by
-   * [target] from the output library of [src]. In other words, a path to import
-   * or export `target.outputFilename` from `src.outputFilename`.
+   * Returns a url to import/export the output library represented by [target]
+   * from the output library of [src]. In other words, a url to import or export
+   * `target.outputFilename` from `src.outputFilename`.
    */
-  String relativeUrl(LibrarySummary src, LibrarySummary target) {
-    var srcDir = path.dirname(src.dartCodePath);
+  String importUrlFor(LibrarySummary src, LibrarySummary target) {
+    if (!_rewritePackageImports &&
+        target.dartCodeUrl.url.startsWith('package:')) {
+      return pathToUrl(path.join(path.dirname(target.dartCodeUrl.url),
+            target.outputFilename));
+    }
+    var srcDir = path.dirname(src.dartCodeUrl.resolvedPath);
     var relDir = path.relative(
-        path.dirname(target.dartCodePath), from: srcDir);
-    return toUrl(_rewritePackages(path.normalize(
+        path.dirname(target.dartCodeUrl.resolvedPath), from: srcDir);
+    return pathToUrl(_rewritePackages(path.normalize(
           path.join(relDir, target.outputFilename))));
   }
 
@@ -143,13 +154,9 @@ class PathMapper {
   String transformUrl(String src, String target) {
     if (Uri.parse(target).isAbsolute) return target;
     if (path.isAbsolute(target)) return target;
-    return toUrl(path.normalize(path.relative(
+    return pathToUrl(path.normalize(path.relative(
           path.join(path.dirname(src), target), from: outputDirPath(src))));
   }
-  
-  /** Convert a OS specific path into a url. */
-  static String toUrl(String relPath) =>
-    (path.separator == '/') ? relPath : path.split(relPath).join('/');
 }
 
 /**

@@ -338,7 +338,8 @@ main() {
 
       transformMainHtml(doc, fileInfo, paths, false, true, messages);
       expect(doc.outerHtml,
-          '\n<!-- This file was auto-generated from ${fileInfo.inputPath}. -->'
+          '\n<!-- This file was auto-generated from '
+          '${fileInfo.inputUrl.resolvedPath}. -->'
           '\n<html><head>'
           '<style>template { display: none; }</style>'
           '<script src="http://ex.com/a.js" type="text/javascript"></script>'
@@ -364,14 +365,15 @@ main() {
       fileInfo.inlinedCode = new DartCodeInfo('main', null, [], '', null);
       // Issue #207 happened because we used to mistakenly take the path of
       // the external file when transforming the urls in the html file.
-      fileInfo.externalFile = new UrlInfo('dir/a.dart', null);
+      fileInfo.externalFile = new UrlInfo('', 'dir/a.dart', null);
       var paths = _newPathMapper('', 'out', true);
       transformMainHtml(doc, fileInfo, paths, false, true, messages);
       var emitter = new EntryPointEmitter(fileInfo);
       emitter.run(paths, null, true);
 
       expect(doc.outerHtml,
-          '\n<!-- This file was auto-generated from ${fileInfo.inputPath}. -->'
+          '\n<!-- This file was auto-generated from '
+          '${fileInfo.inputUrl.resolvedPath}. -->'
           '\n<html><head>'
           '<style>template { display: none; }</style>'
           '<link rel="stylesheet" href="../a.css">'
@@ -387,7 +389,7 @@ main() {
       var doc = parseDocument(html);
       var fileInfo = analyzeNodeForTesting(doc, messages, filepath: 'a.html');
       fileInfo.inlinedCode = new DartCodeInfo('main', null, [], '', null);
-      fileInfo.externalFile = new UrlInfo('dir/a.dart', null);
+      fileInfo.externalFile = new UrlInfo('', 'dir/a.dart', null);
       var paths = _newPathMapper('', 'out', true);
       // TODO(jmesserly): this test is not quite right because we're supplying
       // the hasCss property. We should probably convert this to be a compiler
@@ -397,7 +399,8 @@ main() {
       emitter.run(paths, null, true);
 
       expect(doc.outerHtml,
-          '\n<!-- This file was auto-generated from ${fileInfo.inputPath}. -->'
+          '\n<!-- This file was auto-generated from '
+          '${fileInfo.inputUrl.resolvedPath}. -->'
           '\n<html><head>'
           '<style>template { display: none; }</style>'
           '</head><body>'
@@ -451,6 +454,6 @@ Context _recurse(Element body, bool isClass, int child) {
 }
 
 _newPathMapper(String baseDir, String outDir, bool forceMangle) =>
-    new PathMapper(baseDir, outDir, 'packages', forceMangle);
+    new PathMapper(baseDir, outDir, 'packages', forceMangle, true);
 
 Element _parseBody(String html) => parseDocument(html).body;

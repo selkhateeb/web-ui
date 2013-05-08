@@ -15,18 +15,21 @@ library web_ui.src.summary;
 
 import 'package:source_maps/span.dart' show Span;
 
+// TODO(sigmund): consider moving UrlInfo out of info.dart
+import 'info.dart' show UrlInfo;
+
 /**
  * Summary information from other library-like objects, which includes HTML
  * components and dart libraries).
  */
 class LibrarySummary {
   /** Path to the sources represented by this summary. */
-  final String dartCodePath;
+  final UrlInfo dartCodeUrl;
 
   /** Name given to this source after it was compiled. */
   final String outputFilename;
 
-  LibrarySummary(this.dartCodePath, this.outputFilename);
+  LibrarySummary(this.dartCodeUrl, this.outputFilename);
 }
 
 /** Summary information for an HTML file that defines custom elements. */
@@ -37,8 +40,8 @@ class HtmlFileSummary extends LibrarySummary {
    */
   final Map<String, ComponentSummary> components;
 
-  HtmlFileSummary(String dartCodePath, String outputFilename, this.components)
-      : super(dartCodePath, outputFilename);
+  HtmlFileSummary(UrlInfo dartCodeUrl, String outputFilename, this.components)
+      : super(dartCodeUrl, outputFilename);
 }
 
 /** Information about a web component definition. */
@@ -70,10 +73,10 @@ class ComponentSummary extends LibrarySummary {
   /** Original span where this component is declared. */
   final Span sourceSpan;
 
-  ComponentSummary(String dartCodePath, String outputFilename,
+  ComponentSummary(UrlInfo dartCodeUrl, String outputFilename,
       this.tagName, this.extendsTag, this.className, this.extendsComponent,
       this.sourceSpan, [this.hasConflict = false])
-      : super(dartCodePath, outputFilename);
+      : super(dartCodeUrl, outputFilename);
 
   /**
    * Gets the HTML tag extended by the base of the component hierarchy.

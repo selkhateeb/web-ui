@@ -15,7 +15,6 @@ import 'package:source_maps/span.dart' show Span;
 
 import 'analyzer.dart';
 import 'code_printer.dart';
-import 'codegen.dart' as codegen;
 import 'dart_parser.dart';
 import 'emitters.dart';
 import 'file_system.dart';
@@ -95,7 +94,8 @@ class Compiler {
       }
     }
     _pathMapper = new PathMapper(
-        baseDir, outputDir, packageRoot, options.forceMangle);
+        baseDir, outputDir, packageRoot, options.forceMangle,
+        options.rewriteUrls);
   }
 
   /** Compile the application starting from the given [mainFile]. */
@@ -124,21 +124,22 @@ class Compiler {
     _tasks = new FutureGroup();
     _processed = new Set();
     _processed.add(inputFile);
-    _tasks.add(_parseHtmlFile(new UrlInfo(inputFile, null)));
+    _tasks.add(_parseHtmlFile(new UrlInfo(inputFile, inputFile, null)));
     return _tasks.future;
   }
 
-  void _processHtmlFile(SourceFile file) {
+  void _processHtmlFile(UrlInfo inputUrl, SourceFile file) {
     if (file == null) return;
 
     bool isEntryPoint = _processed.length == 1;
 
     files.add(file);
 
-    var fileInfo = _time('Analyzed definitions', file.path,
-        () => analyzeDefinitions(file, _pathMapper.packageRoot, _messages,
-            isEntryPoint: isEntryPoint));
-    info[file.path] = fileInfo;
+    var fileInfo = _time('Analyzed definitions', inputUrl.url, () {
+      return analyzeDefinitions(inputUrl, file.document,
+        _pathMapper.packageRoot, _messages, isEntryPoint: isEntryPoint);
+    });
+    info[inputUrl.resolvedPath] = fileInfo;
 
     _setOutputFilenames(fileInfo);
     _processImports(fileInfo);
@@ -157,7 +158,7 @@ class Compiler {
     _loadFile(fileInfo.externalFile, _parseDartFile);
 
     // Process any @imports inside of a <style> tag.
-    var urlInfos = findUrlsImported(fileInfo, fileInfo.inputPath,
+    var urlInfos = findUrlsImported(fileInfo, fileInfo.inputUrl,
         _pathMapper.packageRoot, file.document, _messages, options);
     for (var urlInfo in urlInfos) {
       _loadFile(urlInfo, _parseCssFile);
@@ -173,7 +174,7 @@ class Compiler {
 
       // Process any @imports inside of the <style> tag in a component.
       var urlInfos = findUrlsImported(component,
-          component.declaringFile.inputPath, _pathMapper.packageRoot,
+          component.declaringFile.inputUrl, _pathMapper.packageRoot,
           component.element, _messages, options);
       for (var urlInfo in urlInfos) {
         _loadFile(urlInfo, _parseCssFile);
@@ -195,7 +196,7 @@ class Compiler {
   }
 
   void _setOutputFilenames(FileInfo fileInfo) {
-    var filePath = fileInfo.dartCodePath;
+    var filePath = fileInfo.dartCodeUrl.resolvedPath;
     fileInfo.outputFilename = _pathMapper.mangle(path.basename(filePath),
         '.dart', path.extension(filePath) == '.html');
     for (var component in fileInfo.declaredComponents) {
@@ -206,7 +207,7 @@ class Compiler {
             path.basename(externalFile.resolvedPath), '.dart');
       } else {
         var declaringFile = component.declaringFile;
-        var prefix = path.basename(declaringFile.inputPath);
+        var prefix = path.basename(declaringFile.inputUrl.resolvedPath);
         if (declaringFile.declaredComponents.length == 1
             && !declaringFile.codeAttached && !declaringFile.isEntryPoint) {
           name = _pathMapper.mangle(prefix, '.dart', true);
@@ -220,80 +221,81 @@ class Compiler {
   }
 
   /** Parse an HTML file. */
-  Future _parseHtmlFile(UrlInfo inputPath) {
-    if (!_pathMapper.checkInputPath(inputPath, _messages)) {
+  Future _parseHtmlFile(UrlInfo inputUrl) {
+    if (!_pathMapper.checkInputPath(inputUrl, _messages)) {
       return new Future<SourceFile>.value(null);
     }
-    var filePath = inputPath.resolvedPath;
+    var filePath = inputUrl.resolvedPath;
     return fileSystem.readTextOrBytes(filePath)
-        .catchError((e) => _readError(e, inputPath))
+        .catchError((e) => _readError(e, inputUrl))
         .then((source) {
           if (source == null) return;
           var file = new SourceFile(filePath);
           file.document = _time('Parsed', filePath,
               () => parseHtml(source, filePath, _messages));
-          _processHtmlFile(file);
+          _processHtmlFile(inputUrl, file);
         });
   }
 
   /** Parse a Dart file. */
-  Future _parseDartFile(UrlInfo inputPath) {
-    if (!_pathMapper.checkInputPath(inputPath, _messages)) {
+  Future _parseDartFile(UrlInfo inputUrl) {
+    if (!_pathMapper.checkInputPath(inputUrl, _messages)) {
       return new Future<SourceFile>.value(null);
     }
-    var filePath = inputPath.resolvedPath;
+    var filePath = inputUrl.resolvedPath;
     return fileSystem.readText(filePath)
-        .catchError((e) => _readError(e, inputPath))
+        .catchError((e) => _readError(e, inputUrl))
         .then((code) {
           if (code == null) return;
           var file = new SourceFile(filePath, type: SourceFile.DART);
           file.code = code;
-          _processDartFile(file);
+          _processDartFile(inputUrl, file);
         });
   }
 
   /** Parse a stylesheet file. */
-  Future _parseCssFile(UrlInfo inputPath) {
+  Future _parseCssFile(UrlInfo inputUrl) {
     if (!options.processCss ||
-        !_pathMapper.checkInputPath(inputPath, _messages)) {
+        !_pathMapper.checkInputPath(inputUrl, _messages)) {
       return new Future<SourceFile>.value(null);
     }
-    var filePath = inputPath.resolvedPath;
+    var filePath = inputUrl.resolvedPath;
     return fileSystem.readText(filePath)
-        .catchError((e) => _readError(e, inputPath, isWarning: true))
+        .catchError((e) => _readError(e, inputUrl, isWarning: true))
         .then((code) {
           if (code == null) return;
           var file = new SourceFile(filePath, type: SourceFile.STYLESHEET);
           file.code = code;
-          _processCssFile(file);
+          _processCssFile(inputUrl, file);
         });
   }
 
 
-  SourceFile _readError(error, UrlInfo inputPath, {isWarning: false}) {
-    var message = 'unable to open file "${inputPath.resolvedPath}"';
+  SourceFile _readError(error, UrlInfo inputUrl, {isWarning: false}) {
+    var message = 'unable to open file "${inputUrl.resolvedPath}"';
     if (options.verbose) {
       message = '$message. original message:\n $error';
     }
     if (isWarning) {
-      _messages.warning(message, inputPath.sourceSpan);
+      _messages.warning(message, inputUrl.sourceSpan);
     } else {
-      _messages.error(message, inputPath.sourceSpan);
+      _messages.error(message, inputUrl.sourceSpan);
     }
     return null;
   }
 
-  void _processDartFile(SourceFile dartFile) {
+  void _processDartFile(UrlInfo inputUrl, SourceFile dartFile) {
     if (dartFile == null) return;
 
     files.add(dartFile);
 
-    var fileInfo = new FileInfo(dartFile.path);
-    info[dartFile.path] = fileInfo;
+    var resolvedPath = inputUrl.resolvedPath;
+    var fileInfo = new FileInfo(inputUrl);
+    info[resolvedPath] = fileInfo;
     fileInfo.inlinedCode =
-        parseDartCode(fileInfo.inputPath, dartFile.code, _messages);
+        parseDartCode(resolvedPath, dartFile.code, _messages);
     fileInfo.outputFilename =
-        _pathMapper.mangle(path.basename(dartFile.path), '.dart', false);
+        _pathMapper.mangle(path.basename(resolvedPath), '.dart', false);
 
     _processImports(fileInfo);
   }
@@ -302,41 +304,35 @@ class Compiler {
     if (library.userCode == null) return;
 
     for (var directive in library.userCode.directives) {
-      var src = _getDirectivePath(library, directive);
-      if (src == null) {
-        var uri = directive.uri.value;
-        if (uri.startsWith('package:web_ui/observe')) {
-          _useObservers = true;
-        }
+      if (_directiveUri(directive).startsWith('package:web_ui/observe')) {
+        _useObservers = true;
       } else {
-        var urlInfo = new UrlInfo(src,
-            library.userCode.sourceFile.span(directive.offset, directive.end));
-        _loadFile(urlInfo, _parseDartFile);
+        _loadFile(_getDirectiveUrlInfo(library, directive), _parseDartFile);
       }
     }
   }
 
-  void _processCssFile(SourceFile cssFile) {
+  void _processCssFile(UrlInfo inputUrl, SourceFile cssFile) {
     if (cssFile == null) return;
 
     files.add(cssFile);
 
-    var fileInfo = new FileInfo(cssFile.path);
-    info[cssFile.path] = fileInfo;
+    var fileInfo = new FileInfo(inputUrl);
+    info[inputUrl.resolvedPath] = fileInfo;
 
-    var styleSheet = parseCss(cssFile.code, cssFile.path, _messages, options);
+    var styleSheet = parseCss(cssFile.code, _messages, options);
     if (styleSheet != null) {
-      _resolveStyleSheetImports(fileInfo, cssFile.path, styleSheet);
+      _resolveStyleSheetImports(inputUrl, cssFile.path, styleSheet);
       fileInfo.styleSheets.add(styleSheet);
     }
   }
 
   /** Load and parse all style sheets referenced with an @imports. */
-  void _resolveStyleSheetImports(FileInfo fileInfo, String processingFile,
-                                 StyleSheet styleSheet) {
+  void _resolveStyleSheetImports(UrlInfo inputUrl, String processingFile,
+      StyleSheet styleSheet) {
     var urlInfos = _time('CSS imports', processingFile, () =>
-        findImportsInStyleSheet(styleSheet, _pathMapper.packageRoot,
-            fileInfo.inputPath));
+        findImportsInStyleSheet(styleSheet, _pathMapper.packageRoot, inputUrl,
+            _messages));
 
     for (var urlInfo in urlInfos) {
       if (urlInfo == null) break;
@@ -345,20 +341,23 @@ class Compiler {
     }
   }
 
-  String _getDirectivePath(LibraryInfo libInfo, Directive directive) {
+  String _directiveUri(Directive directive) {
     var uriDirective = (directive as UriBasedDirective).uri;
-    var uri = (uriDirective as dynamic).value;
+    return (uriDirective as dynamic).value;
+  }
+
+  UrlInfo _getDirectiveUrlInfo(LibraryInfo library, Directive directive) {
+    var uri = _directiveUri(directive);
     if (uri.startsWith('dart:')) return null;
-
-    if (uri.startsWith('package:')) {
+    if (uri.startsWith('package:') && uri.startsWith('package:web_ui/')) {
       // Don't process our own package -- we'll implement @observable manually.
-      if (uri.startsWith('package:web_ui/')) return null;
-
-      return path.join(_pathMapper.packageRoot, uri.substring(8));
-    } else {
-      return path.normalize(
-          path.join(path.dirname(libInfo.dartCodePath), uri));
+      return null;
     }
+
+    var span = library.userCode.sourceFile.span(
+        directive.offset, directive.end);
+    return UrlInfo.resolve(uri, library.dartCodeUrl, span,
+        _pathMapper.packageRoot, _messages);
   }
 
   /**
@@ -418,7 +417,8 @@ class Compiler {
     for (var lib in libs) {
       if (seen.contains(lib.inlinedCode)) {
         throw new StateError('internal error: '
-            'duplicate user code for ${lib.dartCodePath}. Files were: $files');
+            'duplicate user code for ${lib.dartCodeUrl.resolvedPath}.'
+            ' Files were: $files');
       }
       seen.add(lib.inlinedCode);
     }
@@ -453,7 +453,7 @@ class Compiler {
           transaction.edit(pos, pos, "\nimport "
               "'package:web_ui/observe/observable.dart' as __observe;\n");
         }
-        _emitFileAndSourceMaps(lib, transaction.commit(), lib.dartCodePath);
+        _emitFileAndSourceMaps(lib, transaction.commit(), lib.dartCodeUrl);
       }
     }
   }
@@ -473,10 +473,10 @@ class Compiler {
     // to compute it the other way because of circular references.
     for (var lib in libraries) {
       for (var directive in lib.userCode.directives) {
-        var importPath = _getDirectivePath(lib, directive);
+        var importPath = _getDirectiveUrlInfo(lib, directive);
         if (importPath == null) continue;
 
-        var importInfo = info[importPath];
+        var importInfo = info[importPath.resolvedPath];
         if (importInfo != null) {
           importInfo.referencedBy.add(lib);
         }
@@ -498,24 +498,22 @@ class Compiler {
   }
 
   void _fixImports(LibraryInfo library) {
-    var fileOutputPath = _pathMapper.outputLibraryPath(library);
-
     // Fix imports. Modified files must use the generated path, otherwise
     // we need to make the path relative to the input.
     for (var directive in library.userCode.directives) {
-      var importPath = _getDirectivePath(library, directive);
+      var importPath = _getDirectiveUrlInfo(library, directive);
       if (importPath == null) continue;
-      var importInfo = info[importPath];
+      var importInfo = info[importPath.resolvedPath];
       if (importInfo == null) continue;
 
       String newUri = null;
       if (importInfo.modified) {
         // Use the generated URI for this file.
-        newUri = _pathMapper.relativeUrl(library, importInfo);
+        newUri = _pathMapper.importUrlFor(library, importInfo);
       } else if (options.rewriteUrls) {
         // Get the relative path to the input file.
-        newUri = _pathMapper.transformUrl(library.dartCodePath,
-            directive.uri.value);
+        newUri = _pathMapper.transformUrl(
+            library.dartCodeUrl.resolvedPath, directive.uri.value);
       }
       if (newUri != null) {
         directive.uri = createStringLiteral(newUri);
@@ -576,7 +574,7 @@ class Compiler {
     var fileInfo = info[file.path];
     var printer = new EntryPointEmitter(fileInfo)
         .run(_pathMapper, _edits[fileInfo.userCode], options.rewriteUrls);
-    _emitFileAndSourceMaps(fileInfo, printer, fileInfo.dartCodePath);
+    _emitFileAndSourceMaps(fileInfo, printer, fileInfo.dartCodeUrl);
   }
 
   // TODO(jmesserly): refactor this out of Compiler.
@@ -588,8 +586,9 @@ class Compiler {
     var bootstrapPath = path.join(path.dirname(file.path), bootstrapName);
     var bootstrapOutPath = _pathMapper.outputPath(bootstrapPath, '');
     var bootstrapOutName = path.basename(bootstrapOutPath);
-    output.add(new OutputFile(bootstrapOutPath, codegen.bootstrapCode(
-          _pathMapper.relativeUrl(new FileInfo(bootstrapPath), fileInfo),
+    output.add(new OutputFile(bootstrapOutPath, _bootstrapCode(
+          _pathMapper.importUrlFor(new FileInfo(
+              new UrlInfo('', bootstrapPath, null)), fileInfo),
           _useObservers)));
 
     var document = file.document;
@@ -622,12 +621,12 @@ class Compiler {
       if (file.isStyleSheet) {
         for (var styleSheet in fileInfo.styleSheets) {
           // Translate any URIs in CSS.
-          var uriVisitor = new UriVisitor(_pathMapper, fileInfo.inputPath,
-              options.rewriteUrls);
+          var uriVisitor = new UriVisitor(_pathMapper,
+              fileInfo.inputUrl.resolvedPath, options.rewriteUrls);
           uriVisitor.visitTree(styleSheet);
 
           if (options.debugCss) {
-            print('\nCSS source: ${fileInfo.inputPath}');
+            print('\nCSS source: ${fileInfo.inputUrl.resolvedPath}');
             print('==========\n');
             print(treeToDebugString(styleSheet));
           }
@@ -640,7 +639,7 @@ class Compiler {
         }
 
         // Emit the linked style sheet in the output directory.
-        var outCss = _pathMapper.outputPath(fileInfo.inputPath, '');
+        var outCss = _pathMapper.outputPath(fileInfo.inputUrl.resolvedPath, '');
         output.add(new OutputFile(outCss, css.toString()));
       }
     }
@@ -653,8 +652,8 @@ class Compiler {
           for (var styleSheet in component.styleSheets) {
 
             // Translate any URIs in CSS.
-            var uriVisitor = new UriVisitor(_pathMapper, fileInfo.inputPath,
-                options.rewriteUrls);
+            var uriVisitor = new UriVisitor(_pathMapper,
+                fileInfo.inputUrl.resolvedPath, options.rewriteUrls);
             uriVisitor.visitTree(styleSheet);
 
             if (buff.isEmpty) {
@@ -693,9 +692,7 @@ class Compiler {
       }
       var printer = new WebComponentEmitter(fileInfo, _messages)
           .run(component, _pathMapper, _edits[component.userCode]);
-      var codePath = component.externalFile != null
-          ? component.externalFile.resolvedPath : null;
-      _emitFileAndSourceMaps(component, printer, codePath);
+      _emitFileAndSourceMaps(component, printer, component.externalFile);
     }
   }
 
@@ -704,7 +701,7 @@ class Compiler {
    * source map file.
    */
   void _emitFileAndSourceMaps(
-      LibraryInfo lib, CodePrinter printer, String dartCodePath) {
+      LibraryInfo lib, CodePrinter printer, UrlInfo dartCodeUrl) {
     // Bail if we had an error generating the code for the file.
     if (printer == null) return;
 
@@ -713,7 +710,8 @@ class Compiler {
     var filename = path.basename(libPath);
     printer.add('\n//@ sourceMappingURL=$filename.map');
     printer.build(libPath);
-    output.add(new OutputFile(libPath, printer.text, source: dartCodePath));
+    var sourcePath = dartCodeUrl != null ? dartCodeUrl.resolvedPath : null;
+    output.add(new OutputFile(libPath, printer.text, source: sourcePath));
     // Fix-up the paths in the source map file
     var sourceMap = json.parse(printer.map);
     var urls = sourceMap['sources'];
@@ -737,3 +735,20 @@ class Compiler {
         printTime: options.verbose || printTime);
   }
 }
+
+/**
+ * The code that will be used to bootstrap the application, this is inlined in
+ * the main.html.html output file.
+ */
+String _bootstrapCode(String userMainImport, bool useObservers) => """
+library bootstrap;
+
+import 'package:web_ui/watcher.dart' as watcher;
+import '$userMainImport' as userMain;
+
+main() {
+  watcher.useObservers = $useObservers;
+  userMain.main();
+  userMain.init_autogenerated();
+}
+""";

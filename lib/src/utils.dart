@@ -16,6 +16,10 @@ import 'package:pathos/path.dart' show Builder;
  */
 Builder path = new Builder();
 
+/** Convert a OS specific path into a url. */
+String pathToUrl(String relPath) =>
+  (path.separator == '/') ? relPath : path.split(relPath).join('/');
+
 /**
  * Converts a string name with hyphens into an identifier, by removing hyphens
  * and capitalizing the following letter. Optionally [startUppercase] to

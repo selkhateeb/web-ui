@@ -25,12 +25,13 @@ import 'utils.dart';
  *  Adds prefix error/warning messages to [messages], if [messages] is
  *  supplied.
  */
-void fixupHtmlCss(FileInfo fileInfo, CompilerOptions opts) {
+void fixupHtmlCss(FileInfo fileInfo, CompilerOptions options) {
   // Walk the HTML tree looking for class names or id that are in our parsed
   // stylesheet selectors and making those CSS classes and ids unique to that
   // component.
-  if (opts.verbose) print("  CSS fixup ${path.basename(fileInfo.inputPath)}");
-
+  if (options.verbose) {
+    print("  CSS fixup ${path.basename(fileInfo.inputUrl.resolvedPath)}");
+  }
   for (var component in fileInfo.declaredComponents) {
     // TODO(terry): Consider allowing more than one style sheet per component.
     // For components only 1 stylesheet allowed.
@@ -39,11 +40,12 @@ void fixupHtmlCss(FileInfo fileInfo, CompilerOptions opts) {
 
       // If polyfill is on prefix component name to all CSS classes and ids
       // referenced in the scoped style.
-      var prefix = opts.processCss ? component.tagName : null;
+      var prefix = options.processCss ? component.tagName : null;
       // List of referenced #id and .class in CSS.
       var knownCss = new IdClassVisitor()..visitTree(styleSheet);
       // Prefix all id and class refs in CSS selectors and HTML attributes.
-      new _ScopedStyleRenamer(knownCss, prefix, opts.debugCss).visit(component);
+      new _ScopedStyleRenamer(knownCss, prefix, options.debugCss)
+          .visit(component);
     }
   }
 }
@@ -350,14 +352,17 @@ class UriVisitor extends Visitor {
     if (uri.domain != '') return;
     if (uri.scheme != '' && uri.scheme != 'package') return;
 
-    node.text = PathMapper.toUrl(
+    node.text = pathToUrl(
         path.normalize(path.join(_pathToOriginalCss, node.text)));
   }
 }
 
-List<UrlInfo> findImportsInStyleSheet(StyleSheet styleSheet, String packageRoot,
-                                      String inputPath) =>
-    (new CssImports(packageRoot, inputPath)..visitTree(styleSheet)).urlInfos;
+List<UrlInfo> findImportsInStyleSheet(StyleSheet styleSheet,
+    String packageRoot, UrlInfo inputUrl, Messages messages) {
+  var visitor = new CssImports(packageRoot, inputUrl, messages);
+  visitor.visitTree(styleSheet);
+  return visitor.urlInfos;
+}
 
 /**
  * Find any imports in the style sheet; normalize the style sheet href and
@@ -366,35 +371,37 @@ List<UrlInfo> findImportsInStyleSheet(StyleSheet styleSheet, String packageRoot,
 class CssImports extends Visitor {
   final String packageRoot;
 
-  /** Path to this file. */
-  final String inputPath;
+  /** Input url of the css file, used to normalize relative import urls. */
+  final UrlInfo inputUrl;
 
   /** List of all imported style sheets. */
   final List<UrlInfo> urlInfos = [];
 
-  CssImports(this.packageRoot, this.inputPath);
+  final Messages _messages;
+
+  CssImports(this.packageRoot, this.inputUrl, this._messages);
 
   void visitTree(StyleSheet tree) {
     visitStyleSheet(tree);
   }
 
   void visitImportDirective(ImportDirective node) {
-    var urlInfo = UrlInfo.resolve(packageRoot, inputPath, node.import,
-        node.span, isCss: true);
+    var urlInfo = UrlInfo.resolve(node.import, inputUrl,
+        node.span, packageRoot, _messages, ignoreAbsolute: true);
     if (urlInfo == null) return;
     urlInfos.add(urlInfo);
   }
 }
 
-StyleSheet parseCss(String content, String sourcePath, Messages messages,
-                     CompilerOptions opts) {
+StyleSheet parseCss(String content, Messages messages,
+    CompilerOptions options) {
   if (content.trim().isEmpty) return null;
 
   var errors = [];
 
   // TODO(terry): Add --checked when fully implemented and error handling.
   var stylesheet = css.parse(content, errors: errors, options:
-      [opts.warningsAsErrors ? '--warnings_as_errors' : '', 'memory']);
+      [options.warningsAsErrors ? '--warnings_as_errors' : '', 'memory']);
 
   // Note: errors aren't fatal in HTML (unless strict mode is on).
   // So just print them as warnings.
@@ -447,12 +454,11 @@ VarDefinition findTerminalVarDefinition(Map<String, VarDefinition> varDefs,
  * file's document and for an [info] of type ComponentInfo then [node] is the
  * component's element tag.
  */
-List<UrlInfo> findUrlsImported(LibraryInfo info, String inputPath,
-                               String packageRoot, Node node, Messages messages,
-                               CompilerOptions options) {
+List<UrlInfo> findUrlsImported(LibraryInfo info, UrlInfo inputUrl,
+    String packageRoot, Node node, Messages messages, CompilerOptions options) {
   // Process any @imports inside of the <style> tag.
-  var styleProcessor = new CssStyleTag(packageRoot, info, inputPath,
-      messages, options);
+  var styleProcessor =
+      new CssStyleTag(packageRoot, info, inputUrl, messages, options);
   styleProcessor.visit(node);
   return styleProcessor.imports;
 }
@@ -470,12 +476,12 @@ class CssStyleTag extends TreeVisitor {
    * Path of the declaring file, for a [info] of type FileInfo it's the file's
    * path for a type ComponentInfo it's the declaring file path.
    */
-  final String _inputPath;
+  final UrlInfo _inputUrl;
 
   /** List of @imports found. */
   List<UrlInfo> imports = [];
 
-  CssStyleTag(this._packageRoot, this._info, this._inputPath, this._messages,
+  CssStyleTag(this._packageRoot, this._info, this._inputUrl, this._messages,
       this._options);
 
   void visitElement(Element node) {
@@ -485,14 +491,13 @@ class CssStyleTag extends TreeVisitor {
     if (node.tagName == 'element' && _info is FileInfo) return;
     if (node.tagName == 'style') {
       // Parse the contents of the scoped style tag.
-      var styleSheet = parseCss(node.nodes.single.value, _inputPath, _messages,
-          _options);
+      var styleSheet = parseCss(node.nodes.single.value, _messages, _options);
       if (styleSheet != null) {
         _info.styleSheets.add(styleSheet);
 
         // Find all imports return list of @imports in this style tag.
         var urlInfos = findImportsInStyleSheet(styleSheet, _packageRoot,
-            _inputPath);
+            _inputUrl, _messages);
         imports.addAll(urlInfos);
       }
     }

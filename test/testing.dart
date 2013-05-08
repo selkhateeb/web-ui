@@ -33,8 +33,8 @@ ElementInfo analyzeElement(Element elem, Messages messages) {
 FileInfo analyzeDefinitionsInTree(Document doc, Messages messages,
     {String packageRoot: 'packages'}) {
 
-  return analyzeDefinitions(new SourceFile('')..document = doc,
-      packageRoot, messages);
+  return analyzeDefinitions(new UrlInfo('', '', null),
+      doc, packageRoot, messages);
 }
 
 /** Parses files in [fileContents], with [mainHtmlFile] being the main file. */
@@ -59,7 +59,9 @@ Map<String, FileInfo> analyzeFiles(List<SourceFile> files,
 
   // analyze definitions
   for (var file in files) {
-    result[file.path] = analyzeDefinitions(file, packageRoot, messages);
+    var path = file.path;
+    result[path] = analyzeDefinitions(new UrlInfo(path, path, null),
+        file.document, packageRoot, messages);
   }
 
   // analyze file contents

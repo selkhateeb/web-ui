@@ -719,7 +719,8 @@ main() {
         '</body>'
       );
       var srcFile = new SourceFile('main.html')..document = doc;
-      var info = analyzeDefinitions(srcFile, '', messages);
+      var url = new UrlInfo('main.html', 'main.html', null);
+      var info = analyzeDefinitions(url, doc, '', messages);
       expect(info.declaredComponents.length, equals(2));
 
       // no conflicts yet.
@@ -846,7 +847,7 @@ main() {
       var info = analyzeDefinitionsInTree(doc);
       expect(messages.errors.length, 1);
       expect(messages[0].message,
-          contains("script tag should not use absolute path"));
+          contains("absolute paths not allowed here"));
     });
 
     test("script element with 'src' and content - accept with error", () {
@@ -870,7 +871,8 @@ main() {
     test('binds components in same file', () {
       var doc = parse('<body><x-foo><element name="x-foo" constructor="Foo">');
       var srcFile = new SourceFile('main.html')..document = doc;
-      var info = analyzeDefinitions(srcFile, '', messages);
+      var url = new UrlInfo('main.html', 'main.html', null);
+      var info = analyzeDefinitions(url, doc, '', messages);
       expect(info.declaredComponents.length, equals(1));
 
       analyzeFile(srcFile, { 'main.html': info }, new IntIterator(),
@@ -973,7 +975,8 @@ main() {
       );
 
       var srcFile = new SourceFile('main.html')..document = doc;
-      var info = analyzeDefinitions(srcFile, '', messages);
+      var url = new UrlInfo('main.html', 'main.html', null);
+      var info = analyzeDefinitions(url, doc, '', messages);
       analyzeFile(srcFile, { 'main.html': info }, new IntIterator(), messages);
     });
 
@@ -1036,7 +1039,7 @@ main() {
       var fileInfo = analyzeFiles(files);
       var info = fileInfo['a/b.html'];
       expect(info.styleSheetHrefs.map((l) => l.resolvedPath),
-          ['a/c.css', 'a/d/e.css', '/f.css', 'packages/p.css']);
+          ['a/c.css', 'a/d/e.css', 'packages/p.css']);
     });
   });
 }
@@ -1046,7 +1049,7 @@ _compareSummary(ComponentSummary summary, ComponentSummary other) {
     expect(other, isNull);
     return;
   }
-  expect(summary.dartCodePath, equals(other.dartCodePath));
+  expect(summary.dartCodeUrl, equals(other.dartCodeUrl));
   expect(summary.outputFilename, equals(other.outputFilename));
   expect(summary.tagName, equals(other.tagName));
   expect(summary.extendsTag, equals(other.extendsTag));
