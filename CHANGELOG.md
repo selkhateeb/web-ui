@@ -3,6 +3,34 @@
 This file contains highlights of what changes on each version of the web_ui
 package. This file is normally updated whenever we push a new version to pub.
 
+#### Pub version 0.4.7+2
+  * getShadowRoot replaces _root (_root kept for a deprecation period) #224
+  * fixes to preserve 'package:' imports in generated code
+  * '--analyze-only' option for dwc
+
+#### Pub version 0.4.7+1
+  * hot fix: bug in exit code when running dwc.
+
+#### Pub version 0.4.6+5 and 0.4.7
+  * bug fix: support Observable with an interface
+
+#### Pub version 0.4.6+4
+  * Support @import in css.
+#### Pub version 0.4.6+3
+  * Improvements on watching maps (contribution from @tsander)
+
+#### Pub version 0.4.6+2
+  * allow `<link rel="import">`
+  * fix KeyEvent
+
+#### Pub version 0.4.6+1
+  * hot fix: use latest html5lib
+
+#### Pub version 0.4.6
+  * Added $index (#277)
+  * fix two-way bind for selected-index
+  * fixes for SDK changes
+
 #### Pub version 0.4.5 - Apr 8 2013 (integration SDK 0.4.5.1 r21094)
   * Support for bindings in id attributes (issue #284)
   * Use native DOM node type that is being extended in tags (issue #82)
