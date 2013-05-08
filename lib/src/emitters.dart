@@ -455,7 +455,7 @@ class WebComponentEmitter extends RecursiveEmitter {
     var elemInfo = info.elemInfo;
 
     // TODO(terry): Eliminate when polyfill is the default.
-    var cssPolyfill = messages.options.processCss;
+    var cssPolyfill = useCssPolyFill(messages.options, info);
 
     // elemInfo is pointing at template tag (no attributes).
     assert(elemInfo.node.tagName == 'element');
@@ -480,7 +480,8 @@ class WebComponentEmitter extends RecursiveEmitter {
     if (info.template != null && !elemInfo.childrenCreatedInCode) {
       // TODO(jmesserly): scoped styles probably don't work when
       // childrenCreatedInCode is true.
-      if (!info.styleSheets.isEmpty && !cssPolyfill) {
+      if (!info.styleSheets.isEmpty) {
+        var prefix = cssPolyfill ? info.tagName : null;
         // TODO(jmesserly): csslib+html5lib should work together.  We shouldn't
         //                  need to call a different function to serialize CSS.
         //                  Calling innerHTML on a StyleElement should be
@@ -488,12 +489,12 @@ class WebComponentEmitter extends RecursiveEmitter {
         //                  should work together in the same tree.
         // TODO(terry): Only one style tag per component.
         var styleSheet =
-            '<style scoped>\n'
-            '${emitStyleSheet(info.styleSheets[0])}'
+            '<style>\n'
+            '${emitStyleSheet(info.styleSheets[0], prefix)}'
             '\n</style>';
         var template = elemInfo.node;
         template.insertBefore(new Element.html(styleSheet),
-            template.children[0]);
+            template.hasChildNodes() ? template.children[0] : null);
       }
 
       _context.statics.add('final', '__shadowTemplate',

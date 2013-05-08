@@ -98,7 +98,7 @@ class Compiler {
         options.rewriteUrls);
   }
 
-  /** Compile the application starting from the given [mainFile]. */
+  /** Compile the application starting from the given input file. */
   Future run() {
     if (path.basename(_mainPath).endsWith('.dart')) {
       _messages.error("Please provide an HTML file as your entry point.",

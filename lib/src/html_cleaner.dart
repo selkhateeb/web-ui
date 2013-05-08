@@ -32,6 +32,7 @@ class _HtmlCleaner extends InfoVisitor {
 
   void visitElementInfo(ElementInfo info) {
     var node = info.node;
+
     info.removeAttributes.forEach(node.attributes.remove);
     info.removeAttributes.clear();
 
@@ -62,8 +63,7 @@ class _HtmlCleaner extends InfoVisitor {
       node.nodes.clear();
     }
 
-    if (node.tagName == 'style' && node.attributes.containsKey("scoped") &&
-        _component != null) {
+    if (node.tagName == 'style' && _component != null) {
       // Remove the style tag we've parsed the CSS.
       node.remove();
     }

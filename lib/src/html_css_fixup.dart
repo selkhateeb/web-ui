@@ -19,6 +19,13 @@ import 'paths.dart';
 import 'utils.dart';
 
 /**
+ * Helper function returns [true] if CSS polyfill is on and component has a
+ * scoped style tag.
+ */
+bool useCssPolyFill(CompilerOptions opts, ComponentInfo component) =>
+    opts.processCss && component.scoped;
+
+/**
  *  If processCss is enabled, prefix any component's HTML attributes for id or
  *  class to reference the mangled CSS class name or id.
  */
@@ -37,7 +44,8 @@ void fixupHtmlCss(FileInfo fileInfo, CompilerOptions options) {
 
       // If polyfill is on prefix component name to all CSS classes and ids
       // referenced in the scoped style.
-      var prefix = options.processCss ? component.tagName : null;
+      var prefix = useCssPolyFill(options, component) ?
+          component.tagName : null;
       // List of referenced #id and .class in CSS.
       var knownCss = new IdClassVisitor()..visitTree(styleSheet);
       // Prefix all id and class refs in CSS selectors and HTML attributes.
@@ -470,7 +478,7 @@ class CssStyleTag extends TreeVisitor {
   final CompilerOptions _options;
 
   /**
-   * Path of the declaring file, for a [info] of type FileInfo it's the file's
+   * Path of the declaring file, for a [_info] of type FileInfo it's the file's
    * path for a type ComponentInfo it's the declaring file path.
    */
   final UrlInfo _inputUrl;
@@ -491,6 +499,15 @@ class CssStyleTag extends TreeVisitor {
       var styleSheet = parseCss(node.nodes.single.value, _messages, _options);
       if (styleSheet != null) {
         _info.styleSheets.add(styleSheet);
+
+        // TODO(terry): Check on scoped attribute there's a rumor that styles
+        //              might always be scoped in a component.
+        // TODO(terry): May need to handle multiple style tags some with scoped
+        //              and some without for now first style tag determines how
+        //              CSS is emitted.
+        if (node.attributes.containsKey('scoped') && _info is ComponentInfo) {
+          (_info as ComponentInfo).scoped = true;
+        }
 
         // Find all imports return list of @imports in this style tag.
         var urlInfos = findImportsInStyleSheet(styleSheet, _packageRoot,
