@@ -192,7 +192,7 @@ String escapeDartString(String text, {bool single: true, bool triple: false}) {
   return result == null ? text : result.toString();
 }
 
-const _LF = 10;
+const int _LF = 10;
 bool _isWhitespace(int charCode) {
   switch (charCode) {
     case 9:  // '\t'

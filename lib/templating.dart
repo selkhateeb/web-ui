@@ -183,7 +183,13 @@ void updateStyle(Element elem, oldValue, newValue) {
     throw new DataBindingError("Expected Map<String, String> value "
       "to data-style binding.");
   }
-  newValue.forEach(elem.style.setProperty);
+  // TODO(terry): Change in webkit IDL has caused setProperty to be 3 parameters
+  //              instead of 2 with the 3rd as optional.  Opened bug
+  //              https://code.google.com/p/dart/issues/detail?id=10584
+  //              When fix uncomment below line and remove the line below the
+  //              commented out line.
+  // newValue.forEach(elem.style.setProperty);
+  newValue.forEach((k, v) => elem.style.setProperty(k, v, ""));
 }
 
 /**
