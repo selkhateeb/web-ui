@@ -61,7 +61,10 @@ abstract class WebComponent implements Element {
     if (value == null) {
       throw new ArgumentError('host must not be null.');
     }
-    if (value.xtag != null) {
+    // TODO(jmesserly): xtag used to return "null" if unset, now it checks for
+    // "this". Temporarily allow both.
+    var xtag = value.xtag;
+    if (xtag != null && xtag != value) {
       throw new ArgumentError('host must not have its xtag property set.');
     }
     if (_host != null) {
