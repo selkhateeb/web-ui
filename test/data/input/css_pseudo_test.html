@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<!--
+Copyright (c) 2013, the Dart project authors.  Please see the AUTHORS file
+for details. All rights reserved. Use of this source code is governed by a
+BSD-style license that can be found in the LICENSE file.
+-->
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <link rel="import" href="component_css_pseudo.html">
+  <script src="packages/web_ui/testing/testing.js"></script>
+  <title>CSS Custom Pseudo-Element Test</title>
+</head>
+<body>
+  <style>
+    .test-1::x-background {
+      background-color: red;
+      color: yellow;
+      font-weight: bold;
+    }
+
+    .test-2::x-background > * {
+      background-color: blue;
+      color: green;
+      font-size: 36px !important;
+    }
+  </style>
+
+  <x-comp-pseudo class=test-1></x-comp-pseudo>
+  <x-comp-pseudo></x-comp-pseudo>
+  <x-comp-pseudo class=test-2></x-comp-pseudo>
+
+  <script type="application/dart">
+import 'dart:async';
+import 'dart:html';
+import 'package:unittest/unittest.dart';
+import 'package:web_ui/web_ui.dart';
+
+main() {
+  useShadowDom = false;
+
+  Timer.run(() {
+    // Set of components used.
+    var urls = queryAll('link')
+        .where((link) => link.attributes['rel'] == 'import')
+        .map((link) => link.attributes['href'])
+        .toSet();
+
+    expect(urls.length, 1);
+    expect(urls, contains('component_css_pseudo.html'));
+
+    window.postMessage('done', '*');
+   });
+}
+  </script>
+</body>
+</html>

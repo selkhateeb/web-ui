@@ -334,6 +334,57 @@ class RemoveVarDefinitions extends Visitor {
   }
 }
 
+/**
+ * Process all selectors looking for a pseudo-element in a selector.  If the
+ * name is found in our list of known pseudo-elements.  Known pseudo-elements
+ * are built when parsing a component looking for an attribute named "pseudo".
+ * The value of the pseudo attribute is the name of the custom pseudo-element.
+ * The name is mangled so Dart/JS can't directly access the pseudo-element only
+ * CSS can access a custom pseudo-element (and see issue #510, querying needs
+ * access to custom pseudo-elements).
+ *
+ * Change the custom pseudo-element to be a child of the pseudo attribute's
+ * mangled custom pseudo element name. e.g,
+ *
+ *    .test::x-box
+ *
+ * would become:
+ *
+ *    .test > *[pseudo="x-box_2"]
+ */
+class PseudoElementExpander extends Visitor {
+  final Map<String, String> _pseudoElements;
+
+  PseudoElementExpander(this._pseudoElements);
+
+  void visitTree(StyleSheet tree) => visitStyleSheet(tree);
+
+  visitSelector(Selector node) {
+    var selectors = node.simpleSelectorSequences;
+    for (var index = 0; index < selectors.length; index++) {
+      var selector = selectors[index].simpleSelector;
+      if (selector is PseudoElementSelector) {
+        if (_pseudoElements.containsKey(selector.name)) {
+          // Pseudo Element is a custom element.
+          var mangledName = _pseudoElements[selector.name];
+
+          var span = selectors[index].span;
+
+          var attrSelector = new AttributeSelector(
+              new Identifier('pseudo', span), css.TokenKind.EQUALS,
+              mangledName, span);
+          // The wildcard * namespace selector.
+          var wildCard = new ElementSelector(new Wildcard(span), span);
+          selectors[index] = new SimpleSelectorSequence(wildCard, span,
+                  css.TokenKind.COMBINATOR_GREATER);
+          selectors.insert(++index,
+              new SimpleSelectorSequence(attrSelector, span));
+        }
+      }
+    }
+  }
+}
+
 /** Compute each CSS URI resource relative from the generated CSS file. */
 class UriVisitor extends Visitor {
   /**

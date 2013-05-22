@@ -49,7 +49,7 @@ FileInfo analyzeDefinitions(UrlInfo inputUrl,
 FileInfo analyzeNodeForTesting(Node source, Messages messages,
     {String filepath: 'mock_testing_file.html'}) {
   var result = new FileInfo(new UrlInfo(filepath, filepath, null));
-  new _Analyzer(result, new IntIterator(), messages).visit(source);
+  new _Analyzer(result, new IntIterator(), new Map(), messages).visit(source);
   return result;
 }
 
@@ -60,9 +60,10 @@ FileInfo analyzeNodeForTesting(Node source, Messages messages,
  *  supplied.
  */
 void analyzeFile(SourceFile file, Map<String, FileInfo> info,
-    Iterator<int> uniqueIds, Messages messages) {
+                 Iterator<int> uniqueIds, Map<String, String> pseudoElements,
+                 Messages messages) {
   var fileInfo = info[file.path];
-  var analyzer = new _Analyzer(fileInfo, uniqueIds, messages);
+  var analyzer = new _Analyzer(fileInfo, uniqueIds, pseudoElements, messages);
   analyzer._normalize(fileInfo, info);
   analyzer.visit(file.document);
 }
@@ -74,6 +75,7 @@ class _Analyzer extends TreeVisitor {
   LibraryInfo _currentInfo;
   ElementInfo _parent;
   Iterator<int> _uniqueIds;
+  Map<String, String> _pseudoElements;
   Messages _messages;
 
   /**
@@ -89,8 +91,12 @@ class _Analyzer extends TreeVisitor {
   /**
    * Adds emitted error/warning messages to [_messages].
    * [_messages] must not be null.
+   * Adds pseudo attribute value found on any HTML tag to [_pseudoElements].
+   * [_pseudoElements] must not be null.
    */
-  _Analyzer(this._fileInfo, this._uniqueIds, this._messages) {
+  _Analyzer(this._fileInfo, this._uniqueIds, this._pseudoElements,
+      this._messages) {
+    assert(this._pseudoElements != null);
     assert(this._messages != null);
     _currentInfo = _fileInfo;
   }
@@ -429,6 +435,36 @@ class _Analyzer extends TreeVisitor {
     if (attrInfo != null) {
       info.attributes[name] = attrInfo;
     }
+
+    // Any component's custom pseudo-element(s) defined?
+    if (name == 'pseudo' && _currentInfo is ComponentInfo) {
+      _processPseudoAttribute(info.node, value.split(' '));
+    }
+  }
+
+  void _processPseudoAttribute(Node node, List<String> values) {
+    List mangledValues = [];
+    for (var pseudoElement in values) {
+      if (_pseudoElements.containsKey(pseudoElement)) continue;
+
+      _uniqueIds.moveNext();
+      var newValue = "${pseudoElement}_${_uniqueIds.current}";
+      _pseudoElements[pseudoElement] = newValue;
+      // Mangled name of pseudo-element.
+      mangledValues.add(newValue);
+
+      if (!pseudoElement.startsWith('x-')) {
+        // TODO(terry): The name must start with x- otherwise it's not a custom
+        //              pseudo-element.  May want to relax since components no
+        //              longer need to start with x-.  See isse #509 on
+        //              pseudo-element prefix.
+        _messages.warning("Custom pseudo-element must be prefixed with 'x-'.",
+            node.sourceSpan);
+      }
+    }
+
+    // Update the pseudo attribute with the new mangled names.
+    node.attributes['pseudo'] = mangledValues.join(' ');
   }
 
   /**
@@ -684,12 +720,13 @@ class _Analyzer extends TreeVisitor {
    * Normalizes references in [info]. On the [analyzeDefinitions] phase, the
    * analyzer extracted names of files and components. Here we link those names
    * to actual info classes. In particular:
-   *   * we initialize the [components] map in [info] by importing all
+   *   * we initialize the [FileInfo.components] map in [info] by importing all
    *     [declaredComponents],
-   *   * we scan all [componentLinks] and import their [declaredComponents],
-   *     using [files] to map the href to the file info. Names in [info] will
-   *     shadow names from imported files.
-   *   * we fill [externalCode] on each component declared in [info].
+   *   * we scan all [info.componentLinks] and import their
+   *     [info.declaredComponents], using [files] to map the href to the file
+   *     info. Names in [info] will shadow names from imported files.
+   *   * we fill [LibraryInfo.externalCode] on each component declared in
+   *     [info].
    */
   void _normalize(FileInfo info, Map<String, FileInfo> files) {
     _attachExtenalScript(info, files);
@@ -1041,11 +1078,10 @@ class BindingParser {
   }
 }
 
-
 void analyzeCss(String packageRoot, List<SourceFile> files,
-                Map<String, FileInfo> info, Messages messages,
-                {warningsAsErrors: false}) {
-  var analyzer = new _AnalyzerCss(packageRoot, info, messages,
+                Map<String, FileInfo> info, Map<String, String> pseudoElements,
+                Messages messages, {warningsAsErrors: false}) {
+  var analyzer = new _AnalyzerCss(packageRoot, info, pseudoElements, messages,
       warningsAsErrors);
   for (var file in files) analyzer.process(file);
   analyzer.normalize();
@@ -1054,13 +1090,19 @@ void analyzeCss(String packageRoot, List<SourceFile> files,
 class _AnalyzerCss {
   final String packageRoot;
   final Map<String, FileInfo> info;
+  final Map<String, String> _pseudoElements;
   final Messages _messages;
   final bool _warningsAsErrors;
 
   Set<StyleSheet> allStyleSheets = new Set<StyleSheet>();
 
-  _AnalyzerCss(this.packageRoot, this.info, this._messages,
-      this._warningsAsErrors);
+  /**
+   * [_pseudoElements] list of known pseudo attributes found in HTML, any
+   * CSS pseudo-elements 'name::custom-element' is mapped to the manged name
+   * associated with the pseudo-element key.
+   */
+  _AnalyzerCss(this.packageRoot, this.info, this._pseudoElements,
+               this._messages, this._warningsAsErrors);
 
   /**
    * Run the analyzer on every file that is a style sheet or any component that
@@ -1082,6 +1124,8 @@ class _AnalyzerCss {
       // Add to list of all style sheets analyzed.
       allStyleSheets.addAll(all);
     }
+
+    processCustomPseudoElements();
   }
 
   void normalize() {
@@ -1123,6 +1167,13 @@ class _AnalyzerCss {
     for (var tree in styleSheets) new ResolveVarUsages(varDefs).visitTree(tree);
 
     return styleSheets;
+  }
+
+  processCustomPseudoElements() {
+    var polyFiller = new PseudoElementExpander(_pseudoElements);
+    for (var tree in allStyleSheets) {
+      polyFiller.visitTree(tree);
+    }
   }
 
   /**

@@ -699,7 +699,6 @@ String _emitCreateHtml(Node node, Declarations statics) {
 /** Trim down the html for the main html page. */
 void transformMainHtml(Document document, FileInfo fileInfo,
     PathMapper pathMapper, bool hasCss, bool rewriteUrls, Messages messages) {
-
   var filePath = fileInfo.inputUrl.resolvedPath;
 
   bool dartLoaderFound = false;

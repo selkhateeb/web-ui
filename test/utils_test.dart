@@ -14,7 +14,7 @@ main() {
 
   for (bool startUppercase in [false, true]) {
     Matcher caseEquals(String str) {
-      if (startUppercase) str = str[0].toUpperCase().concat(str.substring(1));
+      if (startUppercase) str = str[0].toUpperCase() + str.substring(1);
       return equals(str);
     }
 

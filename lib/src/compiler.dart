@@ -69,12 +69,7 @@ class Compiler {
   final Map<String, FileInfo> info = new SplayTreeMap<String, FileInfo>();
   final _edits = new Map<DartCodeInfo, TextEditTransaction>();
 
- /**
-  * Creates a compiler with [options] using [fileSystem].
-  *
-  * Adds emitted error/warning messages to [messages], if [messages] is
-  * supplied.
-  */
+ /** Creates a compiler with [options] using [fileSystem]. */
   Compiler(this.fileSystem, this.options, this._messages) {
     _mainPath = options.inputFile;
     var mainDir = path.dirname(_mainPath);
@@ -106,12 +101,24 @@ class Compiler {
       return new Future.value(null);
     }
     return _parseAndDiscover(_mainPath).then((_) {
-      _analyze();
+      // Pseudo-element names exposed in a component via a pseudo attribute.
+      // The name is only available from CSS (not Dart code) so they're mangled.
+      // The same pseudo-element in different components maps to the same
+      // mangled name (as the pseudo-element is scoped inside of the component).
+      var pseudoElements = new Map<String, String>();
+
+      _analyze(pseudoElements);
+
+      // Analyze all CSS files.
+      _time('Analyzed Style Sheets', '', () =>
+          analyzeCss(_pathMapper.packageRoot, files, info, pseudoElements,
+              _messages, warningsAsErrors: options.warningsAsErrors));
+
       // TODO(jmesserly): need to go through our errors, and figure out if some
       // of them should be warnings instead.
       if (_messages.hasErrors || options.analysisOnly) return;
       _transformDart();
-      _emit();
+      _emit(pseudoElements);
     });
   }
 
@@ -428,7 +435,7 @@ class Compiler {
   /**
    * Queue modified Dart files to be written.
    * This will not write files that are handled by [WebComponentEmitter] and
-   * [MainPageEmitter].
+   * [EntryPointEmitter].
    */
   void _emitModifiedDartFiles(List<LibraryInfo> libraries) {
     for (var lib in libraries) {
@@ -522,37 +529,32 @@ class Compiler {
   }
 
   /** Run the analyzer on every input html file. */
-  void _analyze() {
+  void _analyze(Map<String, String> pseudoElements) {
     var uniqueIds = new IntIterator();
     for (var file in files) {
       if (file.isHtml) {
         _time('Analyzed contents', file.path, () =>
-            analyzeFile(file, info, uniqueIds, _messages));
+            analyzeFile(file, info, uniqueIds, pseudoElements, _messages));
       }
     }
-
-    // Analyze all CSS files.
-    _time('Analyzed Style Sheets', '', () =>
-        analyzeCss(_pathMapper.packageRoot, files, info, _messages,
-            warningsAsErrors: options.warningsAsErrors));
   }
 
   /** Emit the generated code corresponding to each input file. */
-  void _emit() {
+  void _emit(Map<String, String> pseudoElements) {
     for (var file in files) {
       if (file.isDart || file.isStyleSheet) continue;
       _time('Codegen', file.path, () {
         var fileInfo = info[file.path];
         cleanHtmlNodes(fileInfo);
         fixupHtmlCss(fileInfo, options);
-        _emitComponents(fileInfo);
+        _emitComponents(fileInfo, pseudoElements);
       });
     }
 
     var entryPoint = files[0];
     assert(info[entryPoint.path].isEntryPoint);
     _emitMainDart(entryPoint);
-    _emitMainHtml(entryPoint);
+    _emitMainHtml(entryPoint, pseudoElements);
 
     assert(_unqiueOutputs());
   }
@@ -579,7 +581,7 @@ class Compiler {
 
   // TODO(jmesserly): refactor this out of Compiler.
   /** Generate an html file with the (trimmed down) main html page. */
-  void _emitMainHtml(SourceFile file) {
+  void _emitMainHtml(SourceFile file, Map<String, String> pseudoElements) {
     var fileInfo = info[file.path];
 
     var bootstrapName = '${path.basename(file.path)}_bootstrap.dart';
@@ -680,7 +682,7 @@ class Compiler {
   }
 
   /** Emits the Dart code for all components in [fileInfo]. */
-  void _emitComponents(FileInfo fileInfo) {
+  void _emitComponents(FileInfo fileInfo, Map<String, String> pseudoElements) {
     for (var component in fileInfo.declaredComponents) {
       // TODO(terry): Handle one stylesheet per component see fixupHtmlCss.
       if (component.styleSheets.length > 1 && options.processCss) {

@@ -66,8 +66,9 @@ Map<String, FileInfo> analyzeFiles(List<SourceFile> files,
 
   // analyze file contents
   var uniqueIds = new IntIterator();
+  var pseudoElements = new Map();
   for (var file in files) {
-    analyzeFile(file, result, uniqueIds, messages);
+    analyzeFile(file, result, uniqueIds, pseudoElements, messages);
   }
   return result;
 }

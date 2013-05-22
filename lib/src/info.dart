@@ -586,11 +586,11 @@ class TemplateInfo extends ElementInfo {
 /**
  * Specifies the action to take on a particular event. Some actions need to read
  * attributes from the DOM element that has the event listener (e.g. two way
- * bindings do this). [elemVarName] stores a reference to this element.
+ * bindings do this). [elementVarName] stores a reference to this element.
  * It is generated outside of the analyzer (in the emitter), so it is passed
  * here as an argument.
  */
-typedef String ActionDefinition(String elemVarName);
+typedef String ActionDefinition(String elementVarName);
 
 
 /**
@@ -638,7 +638,7 @@ class UrlInfo {
 
   /**
    * Resolve a path from an [url] found in a file located at [inputUrl].
-   * Returns null for absolute [urls]. Unless [ignoreAbsolute] is true, reports
+   * Returns null for absolute [url]. Unless [ignoreAbsolute] is true, reports
    * an error message if the url is an absolute url.
    */
   static UrlInfo resolve(String url, UrlInfo inputUrl, Span span,

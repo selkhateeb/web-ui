@@ -28,7 +28,8 @@ abstract class FileSystem {
   Future<String> readText(String path);
 
   /**
-   * Writes [text] to [outfile]. Call flush to insure that changes are visible.
+   * Writes [text] to file at [path]. Call flush to insure that changes are
+   * visible.
    */
   void writeString(String path, String text);
 }
