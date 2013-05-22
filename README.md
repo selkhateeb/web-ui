@@ -21,24 +21,24 @@ We believe that:
 
 Try It Now
 -----------
-Add the Web UI package to your pubspec.yaml file, selecting a version range
-that works with your version of the SDK. For example:
-
-```yaml
-dependencies:
-  web_ui: ">=0.4.1 <0.4.2"    # works with SDK 19425
-```
-
-Versions change within the range when we release small bug fixes, but it
-changes outside of the range on any breaking change. See our
-[changelog][changelog] to find the version that works best for you.
-
-If you continually update your SDK, you can use the latest version of web_ui:
+Add the Web UI package to your pubspec.yaml file:
 
 ```yaml
 dependencies:
   web_ui: any
 ```
+
+Instead of using `any`, we recommend using version ranges to avoid getting your project broken on each release. Using a version range lets you upgrade your package at your own pace:
+
+```yaml
+dependencies:
+  web_ui: ">=0.4.8 <0.4.9"
+```
+
+We update versions within the range when we release small bug fixes. For instance, `0.4.8+1` is considered
+a non-breaking change. We change versions outside of the range when we introduce a breaking change. See our
+[changelog][changelog] to find the version that works best for you.
+
 
 Learn More
 ----------
