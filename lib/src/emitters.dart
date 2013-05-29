@@ -5,7 +5,6 @@
 /** Collects several code emitters for the template tool. */
 library emitters;
 
-import 'dart:uri';
 import 'package:csslib/parser.dart' as css;
 import 'package:csslib/visitor.dart';
 import 'package:html5lib/dom.dart';

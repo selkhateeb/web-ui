@@ -8,8 +8,6 @@
  */
 library web_ui.src.paths;
 
-import 'dart:uri';
-
 import 'info.dart' show UrlInfo;
 import 'messages.dart';
 import 'summary.dart';

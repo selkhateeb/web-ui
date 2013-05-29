@@ -8,7 +8,6 @@ library templating;
 import 'dart:async';
 import 'dart:collection';
 import 'dart:html';
-import 'dart:uri';
 import 'package:web_ui/safe_html.dart';
 import 'package:web_ui/observe.dart';
 import 'package:web_ui/watcher.dart';
@@ -207,7 +206,7 @@ String sanitizeUri(uri) {
 const _SAFE_SCHEMES = const ["http", "https", "ftp", "mailto"];
 
 bool _isSafeUri(String uri) {
-  var scheme = new Uri(uri).scheme;
+  var scheme = Uri.parse(uri).scheme;
   if (scheme == '') return true;
 
   // There are two checks for mailto to correctly handle the Turkish locale.
