@@ -166,29 +166,28 @@ ChangeUnobserver bindStyle(Element elem, Map<String, String> exp()) {
 
 /**
  * Changes the style properties from [oldValue] to [newValue]. A runtime error
- * is reported if [newValue] is not a `Map<String, String>`.
+ * is reported if [newValue] is not a `String` or `Map<String, String>`.
  */
 void updateStyle(Element elem, oldValue, newValue) {
-  if (oldValue is Map<String, String>) {
-    var props = newValue is Map<String, String> ? newValue : const {};
-    for (var property in oldValue.keys) {
-      if (!props.containsKey(property)) {
-        // Value will not be overwritten with new setting. Remove.
-        elem.style.removeProperty(property);
+  if (newValue is! String && newValue is! Map<String, String>) {
+    elem.style.cssText = '';
+    throw new ArgumentError("style must be a String or Map<String, String>.");
+  }
+
+  if (newValue is String) {
+    elem.style.cssText = newValue;
+  } else {
+    if (oldValue is Map<String, String>) {
+      for (var property in oldValue.keys) {
+        if (!newValue.containsKey(property)) {
+          // Value will not be overwritten with new setting. Remove.
+          elem.style.removeProperty(property);
+        }
       }
     }
+
+    newValue.forEach(elem.style.setProperty);
   }
-  if (newValue is! Map<String, String>) {
-    throw new DataBindingError("Expected Map<String, String> value "
-      "to data-style binding.");
-  }
-  // TODO(terry): Change in webkit IDL has caused setProperty to be 3 parameters
-  //              instead of 2 with the 3rd as optional.  Opened bug
-  //              https://code.google.com/p/dart/issues/detail?id=10584
-  //              When fix uncomment below line and remove the line below the
-  //              commented out line.
-  // newValue.forEach(elem.style.setProperty);
-  newValue.forEach((k, v) => elem.style.setProperty(k, v, ""));
 }
 
 /**
@@ -215,13 +214,6 @@ bool _isSafeUri(String uri) {
   // For details, see: http://www.i18nguy.com/unicode/turkish-i18n.html
   return _SAFE_SCHEMES.contains(scheme.toLowerCase()) ||
       "MAILTO" == scheme.toUpperCase();
-}
-
-/** An error thrown when data bindings are set up with incorrect data. */
-class DataBindingError implements Error {
-  final message;
-  DataBindingError(this.message);
-  toString() => "Data binding error: $message";
 }
 
 /**
