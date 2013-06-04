@@ -34,7 +34,8 @@ import 'src/options.dart';
  */
 // TODO(jmesserly): we need a better way to automatically detect input files
 Future<List<dwc.CompilerResult>> build(List<String> arguments,
-    List<String> entryPoints) {
+    List<String> entryPoints,
+    {bool printTime: true, bool shouldPrint: true}) {
   bool useColors = stdioType(stdout) == StdioType.TERMINAL;
   return asyncTime('Total time', () {
     var args = _processArgs(arguments);
@@ -78,7 +79,8 @@ Future<List<dwc.CompilerResult>> build(List<String> arguments,
         if (options.outputDir == null) dwcArgs.addAll(['-o', _outDir(file)]);
         dwcArgs.add(file);
         // Chain tasks to that we run one at a time.
-        lastTask = lastTask.then((_) => dwc.run(dwcArgs, printTime: true));
+        lastTask = lastTask.then((_) => dwc.run(dwcArgs, printTime: printTime,
+            shouldPrint: shouldPrint));
         if (machineFormat) {
           lastTask = lastTask.then((res) {
             // Print mappings for the Dart Editor.
@@ -87,10 +89,14 @@ Future<List<dwc.CompilerResult>> build(List<String> arguments,
               // only information the Editor uses today in order to redirect
               // launches from the source HTML file to the generated one.
               if (out.endsWith(".html") && input != null) {
-                print(json.stringify([{
+                var mapMessage = json.stringify([{
                   "method": "mapping",
                   "params": {"from": input, "to": out},
-                }]));
+                }]);
+                if (shouldPrint) {
+                  print(mapMessage);
+                }
+                res.messages.add(mapMessage);
               }
             });
             return res;
@@ -100,7 +106,7 @@ Future<List<dwc.CompilerResult>> build(List<String> arguments,
       }
     }
     return tasks.future.then((r) => r.where((v) => v != null));
-  }, printTime: true, useColors: useColors);
+  }, printTime: printTime, useColors: useColors);
 }
 
 String _outDir(String file) => path.join(path.dirname(file), 'out');
