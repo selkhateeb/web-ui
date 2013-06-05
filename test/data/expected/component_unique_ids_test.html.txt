@@ -26,6 +26,5 @@ layer at (0,0) size 800x70
             text run at (0,0) width 120: "hello from A"
       RenderBlock (anonymous) at (0,54) size 784x0
         RenderInline {SPAN} at (0,0) size 0x0
-          RenderText {#text} at (0,0) size 0x0
         RenderText {#text} at (0,0) size 0x0
         RenderText {#text} at (0,0) size 0x0

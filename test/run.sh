@@ -51,23 +51,20 @@ function compare {
 }
 
 if [[ ($TEST_PATTERN == "") ]]; then
-  # Note: dart_analyzer needs to be run from the root directory for proper path
+  # Note: dartanalyzer needs to be run from the root directory for proper path
   # canonicalization.
   # TODO(jmesserly): switch to new analyzer once it has good coverage for
   # unimplemented members.
   pushd $DIR/.. > /dev/null
 
   echo Analyzing compiler for warnings or type errors
-  dart_analyzer --fatal-warnings --fatal-type-errors bin/dwc.dart \
-    --work analyzer_out || \
+  dartanalyzer --fatal-warnings --fatal-type-errors bin/dwc.dart || \
     echo -e "Ignoring analyzer errors ([36mdartbug.com/8132[0m)"
 
   echo -e "\nAnalyzing runtime for warnings or type errors"
-  dart_analyzer --fatal-warnings --fatal-type-errors lib/web_ui.dart \
-    --work analyzer_out || \
+  dartanalyzer --fatal-warnings --fatal-type-errors lib/web_ui.dart || \
     echo -e "Ignoring analyzer errors ([36mdartbug.com/8132[0m)"
 
-  rm -r analyzer_out
   popd > /dev/null
 fi
 
