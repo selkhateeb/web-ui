@@ -47,6 +47,13 @@ abstract class WebComponent implements Element {
    */
   Map<String, dynamic> _generatedRoots = {};
 
+  /** Any CSS selector (class, id or element) defined name to mangled name. */
+  ScopedCssMapper _mapper = new ScopedCssMapper({});
+
+  // TODO(terry): Add a mapper per component in the type hierarchy.
+  ScopedCssMapper getScopedCss(String componentName) => _mapper;
+  void setScopedCss(String componentName, var mapper) { _mapper = mapper; }
+
   /**
    * Temporary property until components extend [Element]. An element can
    * only be associated with one host, and it is an error to use a web component
@@ -711,6 +718,30 @@ abstract class WebComponent implements Element {
   // TODO(sigmund): do the normal forwarding when dartbug.com/7919 is fixed.
   Stream<WheelEvent> get onMouseWheel {
     throw new UnsupportedError('onMouseWheel is not supported');
+  }
+}
+
+/**
+ * Maps CSS selectors (class and) to a mangled name and maps x-component name
+ * to [is='x-component'].
+ */
+class ScopedCssMapper {
+  final Map<String, String> _mapping;
+
+  ScopedCssMapper(this._mapping);
+
+  /** Returns mangled name of selector sans . or # character. */
+  String operator [](String selector) => _mapping[selector];
+
+  /** Returns mangled name of selector w/ . or # character. */
+  String getSelector(String selector) {
+    var prefixedName = this[selector];
+    var selectorType = selector[0];
+    if (selectorType == '.' || selectorType == '#') {
+      return '$selectorType${prefixedName}';
+    }
+
+    return prefixedName;
   }
 }
 
