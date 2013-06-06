@@ -43,7 +43,7 @@ void renderTests(String baseDir, String inputDir, String expectedDir,
 
   for (var filePath in paths) {
     var filename = path.basename(filePath);
-    test('drt-compile $filename', () {
+    test('compile $filename', () {
       expect(dwc.run(['-o', outDir, '--basedir', baseDir, filePath],
         printTime: false)
         .then((res) {
@@ -61,12 +61,12 @@ void renderTests(String baseDir, String inputDir, String expectedDir,
     // Get the path from "input" relative to "baseDir"
     var relativeToBase = path.relative(inputDir, from: baseDir);
 
-    test('drt-run', () {
-      var inputUrls = filenames.map((name) =>
-          'file://${path.join(outDir, relativeToBase, name)}').toList();
-
-      expect(Process.run('DumpRenderTree', inputUrls).then((res) {
-        expect(res.exitCode, 0, reason: 'DumpRenderTree exit code: '
+    test('content_shell run', () {
+      var args = ['--dump-render-tree'];
+      args.addAll(filenames.map((name) =>
+          'file://${path.join(outDir, relativeToBase, name)}'));
+      expect(Process.run('content_shell', args).then((res) {
+        expect(res.exitCode, 0, reason: 'content_shell exit code: '
           '${res.exitCode}. Contents of stderr: \n${res.stderr}');
         outs = res.stdout.split('#EOF\n')
           .where((s) => !s.trim().isEmpty).toList();
@@ -80,7 +80,7 @@ void renderTests(String baseDir, String inputDir, String expectedDir,
       int j = i;
       test('verify $filename', () {
         expect(outs, isNotNull, reason:
-          'Output not available, maybe DumpRenderTree failed to run.');
+          'Output not available, maybe content_shell failed to run.');
         var output = outs[j];
         var outPath = path.join(outDir, '$filename.txt');
         var expectedPath = path.join(expectedDir, '$filename.txt');

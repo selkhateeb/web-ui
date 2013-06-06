@@ -4,7 +4,7 @@
 # BSD-style license that can be found in the LICENSE file.
 
 # Usage: call directly in the commandline as test/run.sh ensuring that you have
-# both 'dart' and 'DumpRenderTree' in your path. Filter tests by passing a
+# both 'dart' and 'content_shell' in your path. Filter tests by passing a
 # pattern as an argument to this script.
 
 # TODO(sigmund): replace with a real test runner

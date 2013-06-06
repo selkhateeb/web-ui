@@ -60,14 +60,14 @@ Dependencies are installed using the [Pub Package Manager][pub].
 pub install
 
 # Run command line tests and automated end-to-end tests. It needs two
-# executables on your path: `dart` and `DumpRenderTree` (see below
-# for links to download `DumpRenderTree`)
+# executables on your path: `dart` and `content_shell` (see below
+# for links to download `content_shell`)
 test/run.sh
 ```
-Note: to run browser tests you will need to have [DumpRenderTree][drt],
-which can be downloaded prebuilt for [Ubuntu Lucid][drtlucid],
-[Windows][drtwin], or [Mac][drtmac]. You can also build it from the
-[Dartium and DRT sources][drtsrc].
+Note: to run browser tests you will need to have [content_shell][cs],
+which can be downloaded prebuilt for [Ubuntu Lucid][cs_lucid],
+[Windows][cs_win], or [Mac][cs_mac]. You can also build it from the
+[Dartium and content_shell sources][dartium_src].
 
 For Linux users all the necessary fonts must be installed see
 https://code.google.com/p/chromium/wiki/LayoutTestsLinux
@@ -86,11 +86,11 @@ internals of the code, code reviews, etc.
 [d]: http://www.dartlang.org
 [mb]: http://www.dartlang.org/support/faq.html#what-browsers-supported
 [pub]: http://www.dartlang.org/docs/pub-package-manager/
-[drt]: http://www.chromium.org/developers/testing/webkit-layout-tests
-[drtlucid]: http://gsdview.appspot.com/dartium-archive/continuous/drt-lucid64.zip
-[drtmac]: http://gsdview.appspot.com/dartium-archive/continuous/drt-mac.zip
-[drtwin]: http://gsdview.appspot.com/dartium-archive/continuous/drt-win.zip
-[drtsrc]: http://code.google.com/p/dart/wiki/BuildingDartium
+[cs]: http://www.chromium.org/developers/testing/webkit-layout-tests
+[cs_lucid]: http://gsdview.appspot.com/dartium-archive/continuous/drt-lucid64.zip
+[cs_mac]: http://gsdview.appspot.com/dartium-archive/continuous/drt-mac.zip
+[cs_win]: http://gsdview.appspot.com/dartium-archive/continuous/drt-win.zip
+[dartium_src]: http://code.google.com/p/dart/wiki/BuildingDartium
 [TodoMVC]: http://addyosmani.github.com/todomvc/
 [todo_readme]: https://github.com/dart-lang/web-ui/blob/master/example/todomvc/README.md
 [todo_live]:http://dart-lang.github.io/web-ui/example/todomvc/index.html
