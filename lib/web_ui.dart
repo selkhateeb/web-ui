@@ -679,8 +679,6 @@ abstract class WebComponent implements Element {
   // TODO(jmesserly): rename "created" to "onCreated".
   void onCreated() => created();
 
-  Node get insertionParent => host.insertionParent;
-
   Stream<Event> get onAbort => host.onAbort;
   Stream<Event> get onBeforeCopy => host.onBeforeCopy;
   Stream<Event> get onBeforeCut => host.onBeforeCut;
