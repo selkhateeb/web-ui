@@ -822,9 +822,7 @@ void transformMainHtml(Document document, FileInfo fileInfo,
     var newCss = pathMapper.mangle(path.basename(filePath), '.css', true);
     var linkElem = new Element.html(
         '<link rel="stylesheet" type="text/css" href="$newCss">');
-    var head = document.head;
-    head.insertBefore(linkElem,
-        head.hasChildNodes() ? head.nodes.first : null);
+    document.head.insertBefore(linkElem, null);
   }
 
   var styles = document.queryAll('style');
