@@ -805,7 +805,7 @@ void transformMainHtml(Document document, FileInfo fileInfo,
   for (var tag in document.queryAll('link')) {
     var href = tag.attributes['href'];
     var rel = tag.attributes['rel'];
-    if (rel == 'component' || rel == 'components') {
+    if (rel == 'component' || rel == 'components' || rel == 'import') {
       tag.remove();
     } else if (href != null && rewriteUrls && !hasCss) {
       // Only rewrite URL if rewrite on and we're not CSS polyfilling.
