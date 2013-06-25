@@ -62,10 +62,28 @@ main() {
   // Note: if you're adding more render test suites, make sure to update run.sh
   // as well for convenient baseline diff/updating.
   renderTests('data/input', 'data/input', 'data/expected', 'data/out');
+  renderTests('data/input/css_compile/polyfill',
+      'data/input/css_compile/polyfill',
+      'data/input/css_compile/polyfill/expected',
+      'data/input/css_compile/polyfill/out',
+      ['--no-css-mangle',
+       '--css-reset', 'data/input/css_compile/polyfill/reset.css']);
+  renderTests('data/input/css_compile/polyfill_reset',
+      'data/input/css_compile/polyfill_reset',
+      'data/input/css_compile/polyfill_reset/expected',
+      'data/input/css_compile/polyfill_reset/out',
+      ['--no-css-mangle',
+       '--css-reset', 'data/input/css_compile/polyfill_reset/full_reset.css']);
+  renderTests('data/input/css_compile/shadow_dom',
+      'data/input/css_compile/shadow_dom',
+      'data/input/css_compile/shadow_dom/expected',
+      'data/input/css_compile/shadow_dom/out',
+      ['--no-css']);
   exampleTest('../example/component/news');
-  exampleTest('../example/todomvc');
+  exampleTest('../example/todomvc', ['--no-css']);
 }
 
-void exampleTest(String path) {
-  renderTests(path, '$path/test', '$path/test/expected', '$path/test/out');
+void exampleTest(String path, [List<String> args]) {
+  renderTests(path, '$path/test', '$path/test/expected', '$path/test/out',
+      args);
 }

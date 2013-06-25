@@ -12,6 +12,7 @@ import 'package:html5lib/dom_parsing.dart';
 import 'package:html5lib/parser.dart';
 import 'package:source_maps/span.dart' show Span, FileLocation;
 
+import 'compiler.dart';
 import 'code_printer.dart';
 import 'dart_parser.dart' show DartCodeInfo;
 import 'html5_utils.dart';
@@ -445,41 +446,64 @@ class CssEmitter extends CssPrinter {
  */
 class ComponentCssEmitter extends CssPrinter {
   final String _componentTagName;
-  final String _prefixed;
+  final CssPolyfillKind _polyfillKind;
 
-  ComponentCssEmitter(this._componentTagName, this._prefixed);
+  ComponentCssEmitter(this._componentTagName, this._polyfillKind);
+
+  /** Is the element selector an x-tag name. */
+  bool _isSelectorElementXTag(Selector node) {
+    if (node.simpleSelectorSequences.length > 0) {
+      var selector = node.simpleSelectorSequences[0].simpleSelector;
+      return selector is ElementSelector && selector.name == _componentTagName;
+    }
+    return false;
+  }
 
   /**
    * If element selector is the component's tag name, then change selector to
    * find element who's is attribute is the component's name.
    */
   bool _emitComponentElement(var node) {
-    if (node is ElementSelector && _componentTagName == node.name) {
+    if (_polyfillKind == CssPolyfillKind.SCOPED_POLYFILL &&
+        node is ElementSelector && _componentTagName == node.name) {
       emit('[is="$_componentTagName"]');
       return true;
     }
     return false;
   }
 
+  void visitSelector(Selector node) {
+    // If the selector starts with an x-tag name don't emit it twice.
+    if (!_isSelectorElementXTag(node) &&
+        _polyfillKind == CssPolyfillKind.SCOPED_POLYFILL) {
+      emit('[is="$_componentTagName"] ');
+    }
+    super.visitSelector(node);
+  }
+
   void visitClassSelector(ClassSelector node) {
-    if (_prefixed == null) {
-      super.visitClassSelector(node);
+    if (_polyfillKind == CssPolyfillKind.MANGLED_POLYFILL) {
+      emit('.${_componentTagName}_${node.name}');
     } else {
-      emit('.${_prefixed}_${node.name}');
+      super.visitClassSelector(node);
     }
   }
 
   void visitIdSelector(IdSelector node) {
-    if (_prefixed == null) {
-      super.visitIdSelector(node);
+    if (_polyfillKind == CssPolyfillKind.MANGLED_POLYFILL) {
+      emit('#${_componentTagName}_${node.name}');
     } else {
-      emit('#${_prefixed}_${node.name}');
+      super.visitIdSelector(node);
     }
   }
 
   void visitElementSelector(ElementSelector node) {
-    if (_emitComponentElement(node)) return;
-    super.visitElementSelector(node);
+    if (_componentTagName.isNotEmpty && _emitComponentElement(node)) return;
+    if (_polyfillKind == CssPolyfillKind.MANGLED_POLYFILL) {
+      emit('[is="$_componentTagName"] ${node.name}');
+    } else {
+      super.visitElementSelector(node);
+    }
   }
 }
 
@@ -491,23 +515,22 @@ String emitStyleSheet(StyleSheet ss, FileInfo file) =>
       ..visitTree(ss, pretty: true)).toString();
 
 /** Helper function to emit a component's style tag content. */
-String emitComponentStyleSheet(StyleSheet ss, String tagName, String prefix) =>
-  ((new ComponentCssEmitter(tagName, prefix))
+String emitComponentStyleSheet(StyleSheet ss, String tagName,
+                               CssPolyfillKind polyfillKind) =>
+  ((new ComponentCssEmitter(tagName, polyfillKind))
       ..visitTree(ss, pretty: true)).toString();
 
 /** Generates the class corresponding to a single web component. */
 class WebComponentEmitter extends RecursiveEmitter {
   final Messages messages;
+  final CssPolyfillKind cssPolyfillKind;
 
-  WebComponentEmitter(FileInfo info, this.messages)
+  WebComponentEmitter(FileInfo info, this.messages, this.cssPolyfillKind)
       : super(info, new Context(isClass: true, indent: 1));
 
   CodePrinter run(ComponentInfo info, PathMapper pathMapper,
       TextEditTransaction transaction) {
     var elemInfo = info.elemInfo;
-
-    // TODO(terry): Eliminate when polyfill is the default.
-    var cssPolyfill = useCssPolyFill(messages.options, info);
 
     // elemInfo is pointing at template tag (no attributes).
     assert(elemInfo.node.tagName == 'element');
@@ -531,13 +554,11 @@ class WebComponentEmitter extends RecursiveEmitter {
 
     if (info.template != null && !elemInfo.childrenCreatedInCode) {
       if (!info.styleSheets.isEmpty && !messages.options.processCss) {
-        // TODO(terry): Need to support obfuscated prefix.
-        var prefix = cssPolyfill ? info.tagName : null;
         // TODO(terry): Only one style tag per component.
         var styleSheet =
             '<style>\n'
             '${emitComponentStyleSheet(info.styleSheets[0], info.tagName,
-                prefix)}'
+                cssPolyfillKind)}'
             '\n</style>';
         var template = elemInfo.node;
         template.insertBefore(new Element.html(styleSheet),
@@ -576,7 +597,8 @@ class WebComponentEmitter extends RecursiveEmitter {
     header.addLine('');
     transaction.edit(0, codeInfo.directivesEnd, header);
 
-    var cssMapExpression = createCssSelectorsExpression(info, cssPolyfill);
+    var mangle = cssPolyfillKind == CssPolyfillKind.MANGLED_POLYFILL;
+    var cssMapExpression = createCssSelectorsExpression(info, mangle);
     var classBody = new CodePrinter(1)
         ..add('\n')
         ..addLine('/** Autogenerated from the template. */')
