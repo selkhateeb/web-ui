@@ -8,11 +8,11 @@ BSD-style license that can be found in the LICENSE file.
 <head>
   <meta charset="utf-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
-  <link rel="import" href="comp1.html">
-  <link rel="import" href="comp2.html">
-  <link rel="import" href="comp3.html">
-  <link rel="import" href="comp1_reset.html">
-  <link rel="import" href="comp2_reset.html">
+  <link rel="import" href="components/comp1.html">
+  <link rel="import" href="components/comp2.html">
+  <link rel="import" href="components/comp3.html">
+  <link rel="import" href="components/comp1_reset.html">
+  <link rel="import" href="components/comp2_reset.html">
   <title>CSS Compile-Time</title>
 </head>
 <body>
@@ -67,8 +67,8 @@ main() {
     var divs = queryAll('div');
     expect(divs.length, 14);
 
-    var items = queryAll('div a2');
-    expect(items.length, 2);
+    var items = queryAll('div .a2');
+    expect(items.length, 3);
 
     var xComp1 = queryAll('[is="x-comp1"]');
     expect(xComp1.length, 1);

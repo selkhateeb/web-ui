@@ -72,7 +72,7 @@ function compare_all {
 # TODO(jmesserly): bash and dart regexp might not be 100% the same. Ideally we
 # could do all the heavy lifting in Dart code, and keep this script as a thin
 # wrapper that sets `--enable-type-checks --enable-asserts`
-  for input in $DIR/data/input/*_test.html $DIR/data/input/css_compile/polyfill/*_test.html $DIR/data/input/css_compile/polyfill_reset/*_test.html $DIR/data/input/css_compile/shadow_dom/*_test.html $DIR/../example/component/news/test/*_test.html $DIR/../example/todomvc/test/*_test.html; do
+  for input in $DIR/data/input/*_test.html $DIR/data/input/css_compile/*_test.html $DIR/../example/component/news/test/*_test.html $DIR/../example/todomvc/test/*_test.html; do
     if [[ ($TEST_PATTERN == "") || ($input =~ $TEST_PATTERN) ]]; then
       FILENAME=`basename $input`
       DIRNAME=`dirname $input`
@@ -124,7 +124,6 @@ pushd $DIR > /dev/null
 echo -e "\nRunning unit tests... "
 dart $DART_FLAGS run_all.dart $TEST_PATTERN || compare_all
 popd > /dev/null
-
 
 # Run Dart analyzer to check that we're generating warning clean code.
 # It's a bit slow, so only do this for TodoMVC and html5_utils tests.

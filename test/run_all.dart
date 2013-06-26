@@ -62,23 +62,25 @@ main() {
   // Note: if you're adding more render test suites, make sure to update run.sh
   // as well for convenient baseline diff/updating.
   renderTests('data/input', 'data/input', 'data/expected', 'data/out');
-  renderTests('data/input/css_compile/polyfill',
-      'data/input/css_compile/polyfill',
-      'data/input/css_compile/polyfill/expected',
-      'data/input/css_compile/polyfill/out',
+  renderTests('data/input/css_compile',
+      'data/input/css_compile',
+      'data/input/css_compile/expected',
+      'data/input/css_compile/out',
       ['--no-css-mangle',
-       '--css-reset', 'data/input/css_compile/polyfill/reset.css']);
-  renderTests('data/input/css_compile/polyfill_reset',
-      'data/input/css_compile/polyfill_reset',
-      'data/input/css_compile/polyfill_reset/expected',
-      'data/input/css_compile/polyfill_reset/out',
+       '--css-reset', 'data/input/css_compile/reset.css'],
+      null, 'index_test\.html');
+  renderTests('data/input/css_compile',
+      'data/input/css_compile',
+      'data/input/css_compile/expected',
+      'data/input/css_compile/out',
       ['--no-css-mangle',
-       '--css-reset', 'data/input/css_compile/polyfill_reset/full_reset.css']);
-  renderTests('data/input/css_compile/shadow_dom',
-      'data/input/css_compile/shadow_dom',
-      'data/input/css_compile/shadow_dom/expected',
-      'data/input/css_compile/shadow_dom/out',
-      ['--no-css']);
+       '--css-reset', 'data/input/css_compile/full_reset.css'],
+      null, 'index_reset_test\.html', false);
+  renderTests('data/input/css_compile',
+      'data/input/css_compile',
+      'data/input/css_compile/expected',
+      'data/input/css_compile/out',
+      ['--no-css'], null, 'index_shadow_dom_test\.html', false);
   exampleTest('../example/component/news');
   exampleTest('../example/todomvc', ['--no-css']);
 }

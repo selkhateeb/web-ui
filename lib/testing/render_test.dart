@@ -15,8 +15,8 @@ import 'package:unittest/unittest.dart';
 import 'package:web_ui/dwc.dart' as dwc;
 
 void renderTests(String baseDir, String inputDir, String expectedDir,
-    String outDir, [List<String> args, String script, String pattern]) {
-
+    String outDir, [List<String> args, String script, String pattern,
+    bool deleteDir = true]) {
   if (args == null) args = new Options().arguments;
   if (script == null) script = new Options().script;
 
@@ -35,7 +35,7 @@ void renderTests(String baseDir, String inputDir, String expectedDir,
   // First clear the output folder. Otherwise we can miss bugs when we fail to
   // generate a file.
   var dir = new Directory(outDir);
-  if (dir.existsSync()) {
+  if (dir.existsSync() && deleteDir) {
     print('Cleaning old output for ${path.normalize(outDir)}');
     dir.deleteSync(recursive: true);
   }
