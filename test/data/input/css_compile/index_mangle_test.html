@@ -4,6 +4,7 @@ Copyright (c) 2013, the Dart project authors.  Please see the AUTHORS file
 for details. All rights reserved. Use of this source code is governed by a
 BSD-style license that can be found in the LICENSE file.
 -->
+<!-- TODO(terry): Temporary to ensure mangling not broken. -->
 <html lang="en">
 <head>
   <meta charset="utf-8">
@@ -70,13 +71,13 @@ main() {
     expect(divs.length, 15);
 
     var items = queryAll('div .a2');
-    expect(items.length, 3);
-
-    var blockquotes = queryAll('.a3 blockquote');
-    expect(blockquotes.length, 1);
+    expect(items.length, 1);
 
     var xComp1 = queryAll('[is="x-comp1"]');
     expect(xComp1.length, 1);
+
+    var xComp4 = queryAll('[is="x-comp4"]');
+    expect(xComp4.length, 1);
 
     var xComp1Reset = queryAll('[is="x-comp1-reset"]');
     expect(xComp1Reset.length, 1);

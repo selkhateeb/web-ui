@@ -423,8 +423,8 @@ class CssEmitter extends CssPrinter {
    * If element selector is a component's tag name, then change selector to
    * find element who's is attribute's the component's name.
    */
-  bool _emitComponentElement(var node) {
-    if (node is ElementSelector && _componentsTag.contains(node.name)) {
+  bool _emitComponentElement(ElementSelector node) {
+    if (_componentsTag.contains(node.name)) {
       emit('[is="${node.name}"]');
       return true;
     }
@@ -463,9 +463,9 @@ class ComponentCssEmitter extends CssPrinter {
    * If element selector is the component's tag name, then change selector to
    * find element who's is attribute is the component's name.
    */
-  bool _emitComponentElement(var node) {
+  bool _emitComponentElement(ElementSelector node) {
     if (_polyfillKind == CssPolyfillKind.SCOPED_POLYFILL &&
-        node is ElementSelector && _componentTagName == node.name) {
+        _componentTagName == node.name) {
       emit('[is="$_componentTagName"]');
       return true;
     }
@@ -498,12 +498,8 @@ class ComponentCssEmitter extends CssPrinter {
   }
 
   void visitElementSelector(ElementSelector node) {
-    if (_componentTagName.isNotEmpty && _emitComponentElement(node)) return;
-    if (_polyfillKind == CssPolyfillKind.MANGLED_POLYFILL) {
-      emit('[is="$_componentTagName"] ${node.name}');
-    } else {
-      super.visitElementSelector(node);
-    }
+    if (_emitComponentElement(node)) return;
+    super.visitElementSelector(node);
   }
 }
 

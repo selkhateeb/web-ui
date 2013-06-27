@@ -11,6 +11,7 @@ BSD-style license that can be found in the LICENSE file.
   <link rel="import" href="components/comp1.html">
   <link rel="import" href="components/comp2.html">
   <link rel="import" href="components/comp3.html">
+  <link rel="import" href="components/comp4.html">
   <link rel="import" href="components/comp1_reset.html">
   <link rel="import" href="components/comp2_reset.html">
   <title>CSS Compile-Time</title>
@@ -43,6 +44,7 @@ BSD-style license that can be found in the LICENSE file.
     <x-comp1-reset>x-comp1-reset (yellow/yellow border)</x-comp1-reset>
   </div>
   <div>test #4 (red)</div>
+  <x-comp4>x-comp4 (magenta text purple border 2px)</x-comp4>
 
   <h1>NO Apply Author Styles</h1>
   <div class="a2">Test with class a2 (green solid border display: inline)</div>
@@ -65,10 +67,13 @@ main() {
 
   Timer.run(() {
     var divs = queryAll('div');
-    expect(divs.length, 14);
+    expect(divs.length, 15);
 
     var items = queryAll('div .a2');
     expect(items.length, 3);
+
+    var blockquotes = queryAll('.a3 blockquote');
+    expect(blockquotes.length, 1);
 
     var xComp1 = queryAll('[is="x-comp1"]');
     expect(xComp1.length, 1);

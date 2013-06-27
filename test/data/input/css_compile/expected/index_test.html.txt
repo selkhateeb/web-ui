@@ -1,9 +1,9 @@
 Content-Type: text/plain
 layer at (0,0) size 800x600
   RenderView at (0,0) size 800x600
-layer at (0,0) size 800x480
-  RenderBlock {HTML} at (0,0) size 800x480
-    RenderBody {BODY} at (8,21) size 784x451
+layer at (0,0) size 800x566
+  RenderBlock {HTML} at (0,0) size 800x566
+    RenderBody {BODY} at (8,21) size 784x537
       RenderBlock {H1} at (0,0) size 784x37
         RenderText {#text} at (0,0) size 278x36
           text run at (0,0) width 278: "Apply Author Styles"
@@ -49,15 +49,28 @@ layer at (0,0) size 800x480
       RenderBlock {DIV} at (5,198) size 774x28 [color=#FF0000]
         RenderText {#text} at (0,0) size 123x26
           text run at (0,0) width 123: "test #4 (red)"
-      RenderBlock {H1} at (0,246) size 784x38
+      RenderBlock (anonymous) at (0,230) size 784x1
+        RenderInline {SPAN} at (0,0) size 0x0
+          RenderText {#text} at (0,0) size 0x0
+      RenderBlock (anonymous) at (0,230) size 784x82
+        RenderBlock {DIV} at (5,0) size 774x81 [color=#800080] [border: (3px solid #800080)]
+          RenderBlock {BLOCKQUOTE} at (43,27) size 688x27 [color=#FF00FF]
+            RenderText {#text} at (0,0) size 435x26
+              text run at (0,0) width 435: "x-comp4 (magenta text purple border 2px)"
+            RenderText {#text} at (0,0) size 0x0
+      RenderBlock (anonymous) at (0,316) size 784x1
+        RenderInline {SPAN} at (0,0) size 0x0
+          RenderText {#text} at (0,0) size 0x0
+        RenderText {#text} at (0,0) size 0x0
+      RenderBlock {H1} at (0,332) size 784x38
         RenderText {#text} at (0,0) size 334x36
           text run at (0,0) width 334: "NO Apply Author Styles"
-      RenderBlock (anonymous) at (0,305) size 784x28
+      RenderBlock (anonymous) at (0,391) size 784x28
         RenderInline {DIV} at (0,0) size 542x28 [color=#008000] [border: (1px solid #008000)]
           RenderText {#text} at (6,0) size 540x26
             text run at (6,0) width 540: "Test with class a2 (green solid border display: inline)"
         RenderText {#text} at (0,0) size 0x0
-      RenderBlock {DIV} at (5,337) size 774x28 [color=#FF0000]
+      RenderBlock {DIV} at (5,423) size 774x28 [color=#FF0000]
         RenderInline {SPAN} at (0,0) size 636x26
           RenderText {#text} at (0,0) size 0x0
           RenderInline {DIV} at (0,0) size 626x58 [color=#800080] [border: (1px solid #800080)]
@@ -67,7 +80,7 @@ layer at (0,0) size 800x480
             RenderText {#text} at (0,0) size 0x0
           RenderText {#text} at (0,0) size 0x0
         RenderText {#text} at (0,0) size 0x0
-      RenderBlock {DIV} at (5,379) size 774x30 [color=#FF0000]
+      RenderBlock {DIV} at (5,465) size 774x30 [color=#FF0000]
         RenderBlock (anonymous) at (0,0) size 774x0
           RenderInline {SPAN} at (0,0) size 0x0
             RenderText {#text} at (0,0) size 0x0
@@ -80,7 +93,7 @@ layer at (0,0) size 800x480
           RenderInline {SPAN} at (0,0) size 0x0
             RenderText {#text} at (0,0) size 0x0
           RenderText {#text} at (0,0) size 0x0
-      RenderBlock (anonymous) at (0,423) size 784x28
+      RenderBlock (anonymous) at (0,509) size 784x28
         RenderInline {DIV} at (0,0) size 542x28 [color=#008000] [border: (1px solid #008000)]
           RenderText {#text} at (6,0) size 540x26
             text run at (6,0) width 540: "Test with class a2 (green solid border display: inline)"

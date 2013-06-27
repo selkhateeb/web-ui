@@ -81,6 +81,10 @@ main() {
       'data/input/css_compile/expected',
       'data/input/css_compile/out',
       ['--no-css'], null, 'index_shadow_dom_test\.html', false);
+  renderTests('data/input/css_compile',
+      'data/input/css_compile',
+      'data/input/css_compile/expected',
+      'data/input/css_compile/out', null, null, 'index_mangle_test\.html');
   exampleTest('../example/component/news');
   exampleTest('../example/todomvc', ['--no-css']);
 }
