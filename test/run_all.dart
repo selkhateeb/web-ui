@@ -62,29 +62,20 @@ main() {
   // Note: if you're adding more render test suites, make sure to update run.sh
   // as well for convenient baseline diff/updating.
   renderTests('data/input', 'data/input', 'data/expected', 'data/out');
-  renderTests('data/input/css_compile',
-      'data/input/css_compile',
-      'data/input/css_compile/expected',
-      'data/input/css_compile/out',
-      ['--no-css-mangle',
-       '--css-reset', 'data/input/css_compile/reset.css'],
-      null, 'index_test\.html');
-  renderTests('data/input/css_compile',
-      'data/input/css_compile',
-      'data/input/css_compile/expected',
-      'data/input/css_compile/out',
-      ['--no-css-mangle',
-       '--css-reset', 'data/input/css_compile/full_reset.css'],
-      null, 'index_reset_test\.html', false);
-  renderTests('data/input/css_compile',
-      'data/input/css_compile',
-      'data/input/css_compile/expected',
-      'data/input/css_compile/out',
-      ['--no-css'], null, 'index_shadow_dom_test\.html', false);
-  renderTests('data/input/css_compile',
-      'data/input/css_compile',
-      'data/input/css_compile/expected',
-      'data/input/css_compile/out', null, null, 'index_mangle_test\.html');
+
+  cssCompilePolyFillTest('data/input/css_compile', 'index_test\.html',
+      'reset.css');
+  cssCompilePolyFillTest('data/input/css_compile', 'index_reset_test\.html',
+      'full_reset.css', false);
+  cssCompileShadowDOMTest('data/input/css_compile',
+      'index_shadow_dom_test\.html', false);
+  cssCompileMangleTest('data/input/css_compile', 'index_mangle_test\.html',
+      false);
+  cssCompilePolyFillTest('data/input/css_compile', 'index_apply_test\.html',
+      'reset.css', false);
+  cssCompileShadowDOMTest('data/input/css_compile',
+      'index_apply_shadow_dom_test\.html', false);
+
   exampleTest('../example/component/news');
   exampleTest('../example/todomvc', ['--no-css']);
 }
@@ -92,4 +83,27 @@ main() {
 void exampleTest(String path, [List<String> args]) {
   renderTests(path, '$path/test', '$path/test/expected', '$path/test/out',
       args);
+}
+
+void cssCompileMangleTest(String path, String pattern,
+    [bool deleteDirectory = true]) {
+  renderTests(path, path, '$path/expected', '$path/out',
+      ['--css-mangle'], null, pattern, deleteDirectory);
+}
+
+void cssCompilePolyFillTest(String path, String pattern, String cssReset,
+    [bool deleteDirectory = true]) {
+  var args = ['--no-css-mangle'];
+  if (cssReset != null) {
+    args.addAll(['--css-reset', '${path}/${cssReset}']);
+  }
+  renderTests(path, path, '$path/expected', '$path/out', args, null, pattern,
+      deleteDirectory);
+}
+
+void cssCompileShadowDOMTest(String path, String pattern,
+    [bool deleteDirectory = true]) {
+  var args = ['--no-css'];
+  renderTests(path, path, '$path/expected', '$path/out', args, null, pattern,
+      deleteDirectory);
 }
