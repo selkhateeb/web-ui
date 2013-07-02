@@ -617,9 +617,9 @@ abstract class WebComponent implements Element {
 
   List<Node> get $dom_childNodes => host.$dom_childNodes;
 
-  Node get $dom_firstChild => host.$dom_firstChild;
+  Node get firstChild => host.firstChild;
 
-  Node get $dom_lastChild => host.$dom_lastChild;
+  Node get lastChild => host.lastChild;
 
   String get localName => host.localName;
   String get $dom_localName => host.$dom_localName;
