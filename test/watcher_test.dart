@@ -9,6 +9,8 @@ import 'dart:collection';
 import 'package:unittest/compact_vm_config.dart';
 import 'package:unittest/unittest.dart';
 import 'package:web_ui/watcher.dart';
+import 'package:logging/logging.dart';
+import 'package:stack_trace/stack_trace.dart';
 
 main() {
   useCompactVMConfiguration();
@@ -103,6 +105,120 @@ main() {
       expect(oldValue, 12);
       expect(newValue, 14);
       stop();
+    });
+
+    test('loop is detected', () {
+      int x = 0;
+      var oldValue;
+      var newValue;
+      var stop = watch(() => x, expectAsync1((e) {
+        x++;
+        oldValue = e.oldValue;
+        newValue = e.newValue;
+      }, count: maxNumIterations));
+      var subscription = Logger.root.onRecord.listen(expectAsync1((record) {
+        expect(record.message, startsWith('Possible loop in watchers'));
+      }));
+      x = 1;
+      dispatch();
+      expect(oldValue, maxNumIterations - 1);
+      expect(newValue, maxNumIterations);
+      stop();
+      subscription.cancel();
+    });
+
+    group('loops can be debugged', () {
+      var messages;
+      var subscription;
+      setUp(() {
+        verboseDebugMessages = true;
+        messages = [];
+        subscription = Logger.root.onRecord.listen((record) {
+          messages.add(record.message);
+        });
+      });
+
+      tearDown(() {
+        subscription.cancel();
+        verboseDebugMessages = false;
+      });
+
+      test('no debug name', () {
+        int x = 0;
+        var oldValue;
+        var newValue;
+        // Note: the next line number (151) is recorded in the debug messages
+        var stop = watch(() => x, expectAsync1((e) {
+          x++;
+          oldValue = e.oldValue;
+          newValue = e.newValue;
+        }, count: maxNumIterations));
+        x = 1;
+        dispatch();
+        expect(oldValue, maxNumIterations - 1);
+        expect(newValue, maxNumIterations);
+        expect(messages.length, maxNumIterations + 1);
+
+        // First message contains details of the definition of a callback:
+        var first = messages.first;
+        expect(first, contains('defined at'));
+        expect(first, contains('watcher_test.dart:151:25'));
+
+        // The id is based on some global numbering, read the id, and see that
+        // it is mentioned on every other message:
+        var regExp = new RegExp('(\\(id: #[0-9]*\\))');
+        var match = regExp.firstMatch(first);
+        expect(match, isNotNull);
+        var id = match.group(1);
+        for (int i = 1; i < maxNumIterations - 1; i++) {
+          expect(messages[i], 'watcher updated: <unnamed> $id');
+        }
+        expect(messages.last, startsWith('Possible loop in watchers'));
+        stop();
+      });
+
+      test('debug name provided', () {
+        readCurrentStackTrace = () {
+          try { throw "" ; } catch (e, trace) {
+            return new Trace.from(trace).terse.toString();
+          }
+        };
+        var messages = [];
+        var subscription = Logger.root.onRecord.listen((record) {
+          messages.add(record.message);
+        });
+        int x = 0;
+        var oldValue;
+        var newValue;
+        // Note: the next line number (194) is recorded in the debug messages
+        var stop = watch(() => x, expectAsync1((e) {
+          x++;
+          oldValue = e.oldValue;
+          newValue = e.newValue;
+        }, count: maxNumIterations), 'my-debug-name');
+        x = 1;
+        dispatch();
+        expect(oldValue, maxNumIterations - 1);
+        expect(newValue, maxNumIterations);
+        expect(messages.length, maxNumIterations + 1);
+
+        // First message contains details of the definition of a callback:
+        var first = messages.first;
+        expect(first, contains('defined at'));
+        expect(first, contains('watcher_test.dart 194:25'));
+
+        // The id is based on some global numbering, read the id, and see that
+        // it is mentioned on every other message:
+        var regExp = new RegExp('my-debug-name (\\(id: #[0-9]*\\))');
+        var match = regExp.firstMatch(first);
+        expect(match, isNotNull);
+        var id = match.group(1);
+        for (int i = 1; i < maxNumIterations - 1; i++) {
+          expect(messages[i], 'watcher updated: my-debug-name $id');
+        }
+        expect(messages.last, startsWith('Possible loop in watchers'));
+        stop();
+      });
     });
   });
 
