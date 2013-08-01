@@ -134,11 +134,16 @@ abstract class WebComponent implements Element {
   get isTemplate => host.isTemplate;
   get ref => host.ref;
   get content => host.content;
-  DocumentFragment createInstance(model, String syntax) =>
-      host.createInstance(model, syntax);
+  DocumentFragment createInstance(model, BindingDelegate delegate) =>
+      host.createInstance(model, delegate);
+  createBinding(String name, model, String path) =>
+      host.createBinding(name, model, path);
   void bind(String name, model, String path) => host.bind(name, model, path);
   void unbind(String name) => host.unbind(name);
   void unbindAll() => host.unbindAll();
+  get bindings => host.bindings;
+  BindingDelegate get bindingDelegate => host.bindingDelegate;
+  set bindingDelegate(BindingDelegate value) { host.bindingDelegate = value; }
 
 
   /**
@@ -389,7 +394,8 @@ abstract class WebComponent implements Element {
   CssRect get paddingEdge => host.paddingEdge;
   CssRect get borderEdge => host.borderEdge;
   CssRect get marginEdge => host.marginEdge;
-
+  Point get documentOffset => host.documentOffset;
+  Point offsetTo(Element parent) => host.offsetTo(parent);
 
   Map<String, String> getNamespacedAttributes(String namespace) =>
       host.getNamespacedAttributes(namespace);
