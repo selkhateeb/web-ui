@@ -26,7 +26,7 @@ export 'watcher.dart';
 
 import 'dart:async';
 import 'dart:html';
-import 'dart:mirrors' show reflect;
+import 'package:custom_element/custom_element.dart' show CustomElement;
 import 'package:meta/meta.dart';
 
 /**
@@ -37,7 +37,7 @@ import 'package:meta/meta.dart';
  * - [attributeChanged]
  * - [removed]
  */
-abstract class WebComponent implements Element {
+abstract class WebComponent extends CustomElement {
   /** The web component element wrapped by this class. */
   Element _host;
   List _shadowRoots;
@@ -309,9 +309,6 @@ abstract class WebComponent implements Element {
 
   // TODO(jmesserly): rename "created" to "onCreated".
   void onCreated() => created();
-
-  /** The rest of the [Element] API is handled by [host]. */
-  dynamic noSuchMethod(Invocation m) => reflect(host).delegate(m);
 }
 
 /**
