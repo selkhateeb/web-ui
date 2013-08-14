@@ -854,14 +854,15 @@ String _emitCreateHtml(Node node, Declarations statics) {
 
 /** Trim down the html for the main html page. */
 void transformMainHtml(Document document, FileInfo fileInfo,
-    PathMapper pathMapper, bool hasCss, bool rewriteUrls, Messages messages) {
+    PathMapper pathMapper, bool hasCss, bool rewriteUrls, Messages messages,
+    String bootstrapOutName) {
   var filePath = fileInfo.inputUrl.resolvedPath;
 
-  bool dartLoaderFound = false;
+  var dartLoaderTag = null;
   for (var tag in document.queryAll('script')) {
     var src = tag.attributes['src'];
     if (src != null && src.split('/').last == 'dart.js') {
-      dartLoaderFound = true;
+      dartLoaderTag = tag;
     }
     if (tag.attributes['type'] == 'application/dart') {
       tag.remove();
@@ -909,10 +910,18 @@ void transformMainHtml(Document document, FileInfo fileInfo,
   document.head.nodes.insert(0, parseFragment(
       '<style>template { display: none; }</style>'));
 
-  if (!dartLoaderFound) {
+
+  var bootstrapScript = parseFragment(
+        '<script type="application/dart" src="$bootstrapOutName"></script>');
+  if (dartLoaderTag == null) {
+    document.body.nodes.add(bootstrapScript);
     document.body.nodes.add(parseFragment(
         '<script type="text/javascript" src="packages/browser/dart.js">'
         '</script>\n'));
+  } else if (dartLoaderTag.parent != document.body) {
+    document.body.nodes.add(bootstrapScript);
+  } else {
+    document.body.nodes.insertBefore(bootstrapScript, dartLoaderTag);
   }
 
   // Insert the "auto-generated" comment after the doctype, otherwise IE will

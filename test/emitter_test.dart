@@ -336,7 +336,7 @@ main() {
       fileInfo.inlinedCode = new DartCodeInfo('main', null, [], '', null);
       var paths = _newPathMapper('a', 'b', true);
 
-      transformMainHtml(doc, fileInfo, paths, false, true, messages);
+      transformMainHtml(doc, fileInfo, paths, false, true, messages, 'x');
       expect(doc.outerHtml,
           '\n<!-- This file was auto-generated from '
           '${fileInfo.inputUrl.resolvedPath}. -->'
@@ -351,6 +351,7 @@ main() {
           '<link href="//example.com/a.css" rel="stylesheet">'
           '<link href="/a.css" rel="stylesheet">'
           '</head><body>'
+          '<script type="application/dart" src="x"></script>'
           '<script type="text/javascript" src="packages/browser/dart.js">'
           '</script>\n</body></html>');
     });
@@ -367,7 +368,7 @@ main() {
       // the external file when transforming the urls in the html file.
       fileInfo.externalFile = new UrlInfo('', 'dir/a.dart', null);
       var paths = _newPathMapper('', 'out', true);
-      transformMainHtml(doc, fileInfo, paths, false, true, messages);
+      transformMainHtml(doc, fileInfo, paths, false, true, messages, 'x');
       var emitter = new EntryPointEmitter(fileInfo);
       emitter.run(paths, null, true);
 
@@ -378,6 +379,7 @@ main() {
           '<style>template { display: none; }</style>'
           '<link rel="stylesheet" href="../a.css">'
           '</head><body>'
+          '<script type="application/dart" src="x"></script>'
           '<script type="text/javascript" src="packages/browser/dart.js">'
           '</script>\n'
           '</body></html>');
@@ -394,7 +396,7 @@ main() {
       // TODO(jmesserly): this test is not quite right because we're supplying
       // the hasCss property. We should probably convert this to be a compiler
       // test.
-      transformMainHtml(doc, fileInfo, paths, false, true, messages);
+      transformMainHtml(doc, fileInfo, paths, false, true, messages, 'x');
       var emitter = new EntryPointEmitter(fileInfo);
       emitter.run(paths, null, true);
 
@@ -404,6 +406,7 @@ main() {
           '\n<html><head>'
           '<style>template { display: none; }</style>'
           '</head><body>'
+          '<script type="application/dart" src="x"></script>'
           '<script type="text/javascript" src="packages/browser/dart.js">'
           '</script>\n'
           '</body></html>');
