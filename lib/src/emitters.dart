@@ -921,7 +921,7 @@ void transformMainHtml(Document document, FileInfo fileInfo,
   } else if (dartLoaderTag.parent != document.body) {
     document.body.nodes.add(bootstrapScript);
   } else {
-    document.body.nodes.insertBefore(bootstrapScript, dartLoaderTag);
+    document.body.insertBefore(bootstrapScript, dartLoaderTag);
   }
 
   // Insert the "auto-generated" comment after the doctype, otherwise IE will
