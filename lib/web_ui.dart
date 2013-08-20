@@ -343,3 +343,8 @@ class ScopedCssMapper {
 bool useShadowDom = false;
 
 bool get _realShadowRoot => useShadowDom && ShadowRoot.supported;
+
+/**
+ * Set this to the [Element] to be used as the root for the Web UI app.
+ */
+Element webUIRoot = document.body;
