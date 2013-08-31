@@ -590,17 +590,17 @@ main() {
       observe(() => set.length, (n) { notification = n; });
 
       set.addAll([1, 2, 3]);
-      expect(set, [1, 2, 3]);
+      expect(set, unorderedEquals([1, 2, 3]));
       deliverChangesSync();
       expect(notification, _change(0, 3), reason: 'addAll changes length');
 
       set.add(4);
-      expect(set, [1, 2, 3, 4]);
+      expect(set, unorderedEquals([1, 2, 3, 4]));
       deliverChangesSync();
       expect(notification, _change(3, 4), reason: 'add changes length');
 
       set.removeAll([2, 3]);
-      expect(set, [1, 4]);
+      expect(set, unorderedEquals([1, 4]));
       deliverChangesSync();
       expect(notification, _change(4, 2), reason: 'removeAll changes length');
 
@@ -627,28 +627,28 @@ main() {
       observe(() => set.contains(2), (n) { notification = n; });
 
       set.add(4);
-      expect(set, [1, 2, 3, 4]);
+      expect(set, unorderedEquals([1, 2, 3, 4]));
       deliverChangesSync();
       expect(notification, null, reason: 'add does not change existing items');
 
       set.remove(3);
-      expect(set, [1, 2, 4]);
+      expect(set, unorderedEquals([1, 2, 4]));
       expect(notification, null,
           reason: 'removing an item does not change other items');
 
       set.remove(2);
-      expect(set, [1, 4]);
+      expect(set, unorderedEquals([1, 4]));
       deliverChangesSync();
       expect(notification, _change(true, false));
 
       notification = null;
       set.removeAll([2, 3]);
-      expect(set, [1, 4]);
+      expect(set, unorderedEquals([1, 4]));
       deliverChangesSync();
       expect(notification, null, reason: 'item already removed');
 
       set.add(2);
-      expect(set, [1, 2, 4]);
+      expect(set, unorderedEquals([1, 2, 4]));
       deliverChangesSync();
       expect(notification, _change(false, true), reason: 'item added again');
     });
