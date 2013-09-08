@@ -175,6 +175,9 @@ _emitAddNodes(CodePrinter printer, Declarations statics, List<NodeInfo> nodes,
  * the listener.
  */
 void emitEventListeners(ElementInfo info, CodePrinter printer) {
+  //skip event generation for component elements
+  if(info.component != null) return;
+
   var id = info.identifier;
   info.events.forEach((name, events) {
     for (var event in events) {
@@ -308,9 +311,22 @@ void emitComponentCreation(ElementInfo info, CodePrinter printer) {
   var component = info.component;
   if (component == null) return;
   var id = info.identifier;
-  printer..addLine(
-      '__t.component(new ${component.className}()..host = $id);',
-      span: info.node.sourceSpan);
+
+  //TODO(sam): this is a hack. Find a better way to generate unique name for
+  //           component variables.
+  var c_id = info.identifier.replaceAll('e', 'c');
+
+  // Initialze component
+  printer.addLine('var $c_id = new ${info.component.className}()..host = $id;');
+  printer.addLine('__t.component($c_id);');
+
+  // Attach events
+  info.events.forEach((name, events) {
+    for (var event in events) {
+      printer.addLine('__t.listen($c_id.${event.streamName},'
+          ' (\$event) { ${event.action(id)}; });', span: info.node.sourceSpan);
+    }
+  });
 }
 
 /**
