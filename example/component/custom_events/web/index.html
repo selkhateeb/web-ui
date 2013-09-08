@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Simple Web Components Custom Events Example</title>
+    <link rel="import" href="parent.html">
+    <link rel="import" href="child.html">    
+  </head>
+  <body>
+    <h1>Simple Web Components Custom Events Example</h1>
+    <x-parent></x-parent>
+    <x-child on-delete='delete($event)'>
+      <div>Component with custom event defined in index.html:</div>
+      <div>click delete to fire custom 'DeleteEvent'</div>
+    </x-child>
+    <script type="application/dart">
+      delete(e) {print('delete main');}
+      main() {}</script>
+  </body>
+</html>

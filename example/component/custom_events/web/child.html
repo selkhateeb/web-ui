@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html><body>
+  <element name="x-child" constructor="ChildComponent" extends="div">
+    <template>
+      <div>
+	<content></content>
+	<button on-click="delete($event)">Delete
+	</button>
+      </div>
+    </template>	    
+    <script type="application/dart">
+      import 'dart:html';
+      import 'dart:async';
+      
+      import 'package:web_ui/web_ui.dart';
+      
+      class ChildComponent extends WebComponent {
+        static const deleteEvent =
+          const EventStreamProvider<CustomEvent>('DeleteEvent');
+        Stream<CustomEvent> get onDelete => deleteEvent.forTarget(this.host);
+
+        void delete(event){
+          dispatchEvent(new CustomEvent('DeleteEvent'));
+        }
+        
+      }
+    </script>
+  </element>
+</body></html>

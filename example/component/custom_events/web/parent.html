@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <link rel="import" href="child.html">
+  </head>
+  <body>
+    <element name="x-parent" constructor="ParentComponent" extends="div">
+      <template>
+	<hr/>	
+	<x-child on-delete="delete($event)"
+		 on-click="doSomething($event)">
+
+	  <div>Parent Child example:</div>
+	  <div>Click any where to fire 'click' events</div>
+	  <div>Click 'delete' button to fire custom event 'DeleteEvent'</div>
+	</x-child>
+	<hr/>
+      </template>
+      <script type="application/dart">
+	import "package:web_ui/web_ui.dart";
+	class ParentComponent extends WebComponent {
+	  delete(e) { print('delete'); }
+	  doSomething(e) { print('click'); }
+	}
+      </script>
+    </element>
+  </body>
+</html>
